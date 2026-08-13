@@ -32,30 +32,36 @@ async function appendAttendanceRow(event, student) {
     throw new Error('GOOGLE_SHEET_ID not set in .env');
   }
 
-  // If MongoDB student is missing fields, try to fill from Google Sheets
-  let rollNumber      = student.rollNumber || '';
-  let studentName     = student.studentName || '';
-  let rtuEnrollmentNo = student.rtuEnrollmentNo || '';
-  let branch          = student.branch || '';
-  let currentYearSem  = student.currentYearSem || '';
-  let phoneNumber     = student.phoneNumber || '';
+  // Google Sheets (Sheet1) is the absolute source of truth. Try to fetch the latest live data.
+  let rollNumber      = '';
+  let studentName     = '';
+  let rtuEnrollmentNo = '';
+  let branch          = '';
+  let currentYearSem  = '';
+  let phoneNumber     = '';
 
-  if (!rtuEnrollmentNo || !studentName) {
-    try {
-      const { findStudentByEmail } = require('../services/sheetsService');
-      const sheetStudent = await findStudentByEmail(student.email);
-      if (sheetStudent) {
-        rollNumber      = rollNumber || sheetStudent.rollNumber || '';
-        studentName     = studentName || sheetStudent.studentName || '';
-        rtuEnrollmentNo = rtuEnrollmentNo || sheetStudent.rtuEnrollmentNo || '';
-        branch          = branch || sheetStudent.branch || '';
-        currentYearSem  = currentYearSem || sheetStudent.currentYearSem || '';
-        phoneNumber     = phoneNumber || sheetStudent.phoneNumber || '';
-      }
-    } catch (e) {
-      console.warn('Could not fetch student from sheets for attendance row:', e.message);
+  try {
+    const { findStudentByEmail } = require('../services/sheetsService');
+    const sheetStudent = await findStudentByEmail(student.email);
+    if (sheetStudent) {
+      rollNumber      = sheetStudent.rollNumber || '';
+      studentName     = sheetStudent.studentName || '';
+      rtuEnrollmentNo = sheetStudent.rtuEnrollmentNo || '';
+      branch          = sheetStudent.branch || '';
+      currentYearSem  = sheetStudent.currentYearSem || '';
+      phoneNumber     = sheetStudent.phoneNumber || '';
     }
+  } catch (e) {
+    console.warn('Could not fetch student from sheets for attendance row:', e.message);
   }
+
+  // Fall back to MongoDB values only if Sheets lookup failed or returned empty values
+  rollNumber      = rollNumber || student.rollNumber || '';
+  studentName     = studentName || student.studentName || '';
+  rtuEnrollmentNo = rtuEnrollmentNo || student.rtuEnrollmentNo || '';
+  branch          = branch || student.branch || '';
+  currentYearSem  = currentYearSem || student.currentYearSem || '';
+  phoneNumber     = phoneNumber || student.phoneNumber || '';
 
   // 11 columns matching Sheet2 headers exactly
   const values = [
@@ -79,7 +85,7 @@ async function appendAttendanceRow(event, student) {
     requestBody: { values: [values] },
   });
 
-  console.log(`📝 Attendance row appended to Sheet2 for: ${studentName} (${rollNumber})`);
+  console.log(`📝 Attendance row appended to Sheet2 for: ${studentName} (${rollNumber}) — Semester: ${currentYearSem}`);
 }
 
 module.exports = { appendAttendanceRow };
