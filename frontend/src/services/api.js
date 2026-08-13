@@ -7,6 +7,9 @@ if (baseURL !== '/api' && !baseURL.endsWith('/api') && !baseURL.endsWith('/api/'
   baseURL = baseURL.endsWith('/') ? `${baseURL}api` : `${baseURL}/api`;
 }
 
+// Configure default baseURL for all raw axios calls (e.g. in Admin.jsx / AttendanceControl.jsx)
+axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL || '';
+
 const api = axios.create({
   baseURL,
   headers: { 'Content-Type': 'application/json' },
