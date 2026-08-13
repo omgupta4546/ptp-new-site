@@ -1,0 +1,6 @@
+Roll_Number,Student_Name,RTU_Enrollment_No,Branch,Current_Year_Sem,Email_ID,Phone_Number,SGPA_Sem1,SGPA_Sem2,SGPA_Sem3,SGPA_Sem4,SGPA_Sem5,SGPA_Sem6,Current_CGPA,Active_Backlogs_Count,Backlog_Details
+20EICCS001,Aarav Sharma,20E1EICCS40P001,CSE,7th Sem,omgupta6325@gmail.com,9876543210,8.50,8.75,8.20,8.90,8.40,8.60,8.55,0,
+20EICEC015,Priya Verma,20E1EICEC40P015,ECE,7th Sem,priya.verma@rtu.ac.in,9812345678,7.20,6.80,7.50,6.90,7.10,7.30,7.13,1,Digital Communication (EC-502)
+20EICEI032,Rohan Gupta,20E1EICEI40P032,EIC,7th Sem,rohan.gupta@rtu.ac.in,9988776655,9.10,9.30,9.00,9.25,9.40,9.15,9.20,0,
+20EICME045,Ananya Singh,20E1EICME40P045,ME,7th Sem,ananya.singh@rtu.ac.in,9765432109,6.50,6.70,6.40,6.80,6.60,6.90,6.65,2,"Fluid Mechanics (ME-403), Thermodynamics (ME-301)"
+20EICEE050,Vikram Rathore,20E1EICEE40P050,EE,7th Sem,vikram.rathore@rtu.ac.in,9898989898,8.10,8.30,8.00,8.20,8.40,8.50,8.25,0,
