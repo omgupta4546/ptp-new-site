@@ -1,20 +1,25 @@
-const nodemailer = require('nodemailer');
+// Gmail REST API Email Service (No Nodemailer)
+// Uses direct HTTPS calls to send email via OAuth2 refresh token
 
-// Create reusable transporter
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT, 10),
-    secure: false, // true for 465, false for other ports (TLS via STARTTLS)
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
+async function getAccessToken() {
+  const params = new URLSearchParams();
+  params.append('client_id', process.env.GMAIL_CLIENT_ID);
+  params.append('client_secret', process.env.GMAIL_CLIENT_SECRET);
+  params.append('refresh_token', process.env.GMAIL_REFRESH_TOKEN);
+  params.append('grant_type', 'refresh_token');
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
   });
-};
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error('Failed to refresh Gmail access token: ' + JSON.stringify(data));
+  }
+  return data.access_token;
+}
 
 /**
  * Send OTP verification email to student
@@ -23,15 +28,10 @@ const createTransporter = () => {
  * @param {string} studentName - Student name (optional)
  */
 const sendOTPEmail = async (to, otp, studentName = 'Student') => {
-  const transporter = createTransporter();
-
   const expiryMinutes = process.env.OTP_EXPIRY_MINUTES || 2;
+  const subject = '🔐 RTU Placement Cell — Your OTP for Registration';
 
-  const mailOptions = {
-    from: process.env.EMAIL_FROM,
-    to,
-    subject: '🔐 RTU Placement Cell — Your OTP for Registration',
-    html: `
+  const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -97,28 +97,64 @@ const sendOTPEmail = async (to, otp, studentName = 'Student') => {
   </table>
 </body>
 </html>
-    `,
-  };
+  `;
 
-  const info = await transporter.sendMail(mailOptions);
-  console.log(`📧 OTP email sent to ${to} — MessageId: ${info.messageId}`);
-  return info;
+  try {
+    const accessToken = await getAccessToken();
+
+    const base64Subject = Buffer.from(subject).toString('base64');
+    const formattedSubject = `=?utf-8?B?${base64Subject}?=`;
+
+    const emailParts = [
+      `From: ${process.env.EMAIL_USER}`,
+      `To: ${to}`,
+      `Subject: ${formattedSubject}`,
+      `MIME-Version: 1.0`,
+      `Content-Type: text/html; charset=utf-8`,
+      ``,
+      html,
+    ];
+    const emailString = emailParts.join('\r\n');
+    const base64SafeString = Buffer.from(emailString)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    const sendResponse = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        raw: base64SafeString,
+      }),
+    });
+
+    const sendData = await sendResponse.json();
+    if (!sendResponse.ok) {
+      throw new Error('Failed to send email via Gmail REST API: ' + JSON.stringify(sendData));
+    }
+    console.log(`📧 OTP email sent to ${to} via Gmail REST API — MessageId: ${sendData.id}`);
+    return sendData;
+  } catch (err) {
+    console.error('❌ Error sending OTP email via Gmail REST API:', err.message);
+    throw err;
+  }
 };
 
 /**
- * Verify SMTP connection (call on server startup)
+ * Verify Gmail REST API connection (call on server startup)
  */
 const verifyMailerConnection = async () => {
   try {
-    const transporter = createTransporter();
-    // Non-blocking quick check
-    await Promise.race([
-      transporter.verify(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('SMTP verify timeout (skipped)')), 2000))
-    ]);
-    console.log('✅ SMTP Mailer connection verified');
+    const accessToken = await getAccessToken();
+    if (accessToken) {
+      console.log('✅ Gmail REST API credentials verified successfully');
+    }
   } catch (err) {
-    console.warn(`⚠️  SMTP Mailer status: ${err.message}`);
+    console.warn(`⚠️  Gmail REST API status: ${err.message}`);
   }
 };
 

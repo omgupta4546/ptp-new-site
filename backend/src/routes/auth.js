@@ -12,9 +12,9 @@ const {
 
 // Rate limiters
 const otpLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,
-  message: { success: false, message: 'Too many OTP requests. Please try again after 15 minutes.' },
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 3, // max 3 requests
+  message: { success: false, message: 'Too many OTP requests. Please try again after 5 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
 });

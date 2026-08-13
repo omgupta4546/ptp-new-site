@@ -13,12 +13,14 @@ const VolunteerScanner = () => {
   const isProcessing = useRef(false);
 
   useEffect(() => {
+    let active = true;
     const scanner = new Html5Qrcode('qr-reader');
     scannerRef.current = scanner;
 
     // Initialize scanner with available cameras, prefer back/environment camera
     Html5Qrcode.getCameras()
       .then((cameras) => {
+        if (!active) return;
         if (!cameras || cameras.length === 0) {
           console.error('No cameras found for QR scanning');
           setMessage('❌ No camera available');
@@ -55,8 +57,8 @@ const VolunteerScanner = () => {
                   return;
                 }
 
-                // Assume QR contains student identifier (enrollment number or roll)
-                const identifier = raw.includes('/') ? raw.split('/').pop() : raw;
+                // The QR contains the student enrollment number directly
+                const identifier = raw;
 
                 // Build API URL (supports VITE env var)
                 const backendBase = import.meta.env.VITE_BACKEND_URL || '';
@@ -92,22 +94,32 @@ const VolunteerScanner = () => {
             (errorMessage) => { console.warn('QR Scan error:', errorMessage); }
           )
           .then(() => {
+            if (!active) {
+              // If component unmounted during startup, stop immediately
+              scanner.stop().catch(() => {});
+              return;
+            }
             setScanning(true);
             setMessage('Ready — point camera at student QR code');
           })
           .catch((err) => {
+            if (!active) return;
             console.error('Camera start error:', err);
             setMessage('❌ Camera error');
           });
       })
       .catch((err) => {
+        if (!active) return;
         console.error('Failed to get cameras:', err);
         setMessage('❌ Unable to access camera');
       });
 
     return () => {
-      if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().catch(() => {});
+      active = false;
+      if (scannerRef.current) {
+        if (scannerRef.current.isScanning) {
+          scannerRef.current.stop().catch(() => {});
+        }
       }
     };
   }, [eventId, token]);

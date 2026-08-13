@@ -75,21 +75,54 @@ exports.getVolunteerLink = async (req, res) => {
   }
 };
 
-// Volunteer scans QR code (student identifier sent from front‑end)
 exports.scanQRCode = async (req, res) => {
   try {
     const { eventId, token } = req.params;
-    const { studentIdentifier } = req.body; // could be enrollment number or roll number
+    const rawIdentifier = (req.body.studentIdentifier || '').trim();
+
+    if (!rawIdentifier) {
+      return res.status(400).json({ success: false, message: 'No student identifier provided' });
+    }
 
     const event = await Event.findOne({ _id: eventId, token, status: 'open' });
     if (!event) return res.status(403).json({ success: false, message: 'Invalid or closed event' });
 
-    const student = await User.findOne({
+    // Normalize: decode URI-encoded values and trim
+    const identifier = decodeURIComponent(rawIdentifier).trim();
+
+    // 1. Try finding student in MongoDB first
+    let student = await User.findOne({
       $or: [
-        { rollNumber: studentIdentifier },
-        { rtuEnrollmentNo: studentIdentifier },
+        { rollNumber: identifier },
+        { rtuEnrollmentNo: identifier },
       ],
     });
+
+    // 2. If not found in MongoDB, search Google Sheets and try to match via email
+    if (!student) {
+      const { fetchAllStudents } = require('../services/sheetsService');
+      const allStudents = await fetchAllStudents();
+      const sheetStudent = allStudents.find(
+        (s) =>
+          (s.rollNumber && s.rollNumber.trim().toLowerCase() === identifier.toLowerCase()) ||
+          (s.rtuEnrollmentNo && s.rtuEnrollmentNo.trim().toLowerCase() === identifier.toLowerCase())
+      );
+
+      if (sheetStudent && sheetStudent.emailId) {
+        // Try to find the MongoDB user by email and update their missing fields
+        student = await User.findOne({ email: sheetStudent.emailId.toLowerCase() });
+        if (student) {
+          // Backfill missing fields from sheet data
+          if (!student.rtuEnrollmentNo) student.rtuEnrollmentNo = sheetStudent.rtuEnrollmentNo || '';
+          if (!student.rollNumber) student.rollNumber = sheetStudent.rollNumber || '';
+          if (!student.studentName) student.studentName = sheetStudent.studentName || '';
+          if (!student.branch) student.branch = sheetStudent.branch || '';
+          if (!student.phoneNumber) student.phoneNumber = sheetStudent.phoneNumber || '';
+          await student.save();
+        }
+      }
+    }
+
     if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
 
     // Prevent duplicate scans for same event
@@ -98,10 +131,12 @@ exports.scanQRCode = async (req, res) => {
 
     const attendance = await Attendance.create({ event: eventId, student: student._id });
 
-    // Append row to Google Sheet
-    // await appendAttendanceRow(event, student, attendance.scannedAt);
+    // Append row to Google Sheet (Sheet2) — non-blocking so scan response isn't delayed
+    appendAttendanceRow(event, student).catch((sheetErr) => {
+      console.error('⚠️ Failed to write attendance to Google Sheet:', sheetErr.message);
+    });
 
-    res.json({ success: true, message: 'Attendance recorded' });
+    res.json({ success: true, message: `Attendance recorded for ${student.studentName || identifier}` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: err.message });

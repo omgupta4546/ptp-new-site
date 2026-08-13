@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
   User, Award, BookOpen, AlertCircle, RefreshCw, 
-  Phone, Mail, CheckCircle2, ShieldAlert, AlertTriangle, FileText
+  Phone, Mail, CheckCircle2, ShieldAlert, AlertTriangle, FileText, Download, QrCode
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import CGPAMeter from '../components/CGPAMeter';
@@ -129,20 +129,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Persistent Student QR Code (static for lifetime) */}
-        <div className="mt-6 flex flex-col items-center">
-          <p className="text-sm font-medium text-gray-600 mb-2">
-            Scan this QR to mark attendance
-          </p>
-          <QRCodeCanvas
-            value={profile.rtuEnrollmentNo}
-            size={150}
-            bgColor="#ffffff"
-            fgColor="#003087"
-            level="M"
-          />
-        </div>
-
         {/* Academic Overview Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* CGPA Meter Card */}
@@ -153,7 +139,7 @@ export default function Dashboard() {
                 Overall CGPA
               </h3>
               <span className="text-[10px] bg-blue-50 text-rtu-blue px-2 py-0.5 rounded-full font-semibold">
-                Sem {profile.currentYearSem}
+                {profile.currentYearSem?.toLowerCase().includes('sem') ? profile.currentYearSem : `Sem ${profile.currentYearSem}`}
               </span>
             </div>
             
@@ -175,7 +161,7 @@ export default function Dashboard() {
           </div>
 
           {/* Backlog Status Card */}
-          <div className="stat-card md:col-span-2 flex flex-col justify-between">
+          <div className="stat-card flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
@@ -191,9 +177,52 @@ export default function Dashboard() {
             </div>
 
             <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100 text-xs text-gray-600 space-y-1">
-              <p className="font-semibold text-gray-800">📌 Placement Eligibility Criteria:</p>
-              <p>&bull; Minimum CGPA of <strong>7.00</strong> across completed semesters.</p>
-              <p>&bull; Maximum of <strong>0 active backlogs</strong> allowed for core hiring drives.</p>
+              <p className="font-semibold text-gray-800">📌 Placement Eligibility:</p>
+              <p>&bull; Minimum CGPA of <strong>7.00</strong> across semesters.</p>
+              <p>&bull; Maximum of <strong>0 active backlogs</strong> allowed.</p>
+            </div>
+          </div>
+
+          {/* Student QR Card */}
+          <div className="stat-card flex flex-col items-center justify-between">
+            <div className="flex items-center justify-between w-full mb-4">
+              <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                <QrCode className="w-4 h-4 text-rtu-blue" />
+                Attendance QR
+              </h3>
+              <span className="text-[10px] bg-blue-50 text-rtu-blue px-2 py-0.5 rounded-full font-semibold">
+                Student ID
+              </span>
+            </div>
+
+            <div className="bg-white p-3 rounded-xl border-2 border-dashed border-blue-100 flex items-center justify-center my-auto">
+              <QRCodeCanvas
+                id="student-qr-canvas"
+                value={profile.rtuEnrollmentNo || profile.rollNumber || ''}
+                size={140}
+                bgColor="#ffffff"
+                fgColor="#003087"
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+
+            <div className="w-full text-center mt-4 pt-4 border-t border-gray-100 flex flex-col gap-3">
+              <button
+                id="download-qr-btn"
+                onClick={() => {
+                  const canvas = document.getElementById('student-qr-canvas');
+                  if (!canvas) return;
+                  const url = canvas.toDataURL('image/png');
+                  const link = document.createElement('a');
+                  link.download = `QR_${profile.rtuEnrollmentNo || profile.rollNumber || 'student'}.png`;
+                  link.href = url;
+                  link.click();
+                }}
+                className="w-full px-4 py-2.5 rounded-xl bg-rtu-gradient text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all duration-200 shadow-md"
+              >
+                <Download className="w-4 h-4" /> Download QR
+              </button>
             </div>
           </div>
         </div>

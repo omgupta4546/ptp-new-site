@@ -264,15 +264,27 @@ const setPassword = async (req, res) => {
     if (isDBConnected()) {
       await User.findOneAndUpdate(
         { email },
-        { email, hashedPassword, rollNumber: student?.rollNumber || '', isVerified: true },
+        {
+          email,
+          hashedPassword,
+          rollNumber:      student?.rollNumber || '',
+          rtuEnrollmentNo: student?.rtuEnrollmentNo || '',
+          studentName:     student?.studentName || '',
+          branch:          student?.branch || '',
+          currentYearSem:  student?.currentYearSem || '',
+          phoneNumber:     student?.phoneNumber || '',
+          isVerified:      true,
+        },
         { upsert: true, new: true }
       );
     } else {
       memoryUsers.set(email, {
         email,
         hashedPassword,
-        rollNumber: student?.rollNumber || '',
-        isVerified: true,
+        rollNumber:      student?.rollNumber || '',
+        rtuEnrollmentNo: student?.rtuEnrollmentNo || '',
+        studentName:     student?.studentName || '',
+        isVerified:      true,
       });
       saveMemoryUsers(memoryUsers);
     }
@@ -316,6 +328,20 @@ const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.hashedPassword);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+    }
+
+    // Backfill missing profile fields from Google Sheets (for users registered before this fix)
+    if (isDBConnected() && user._id && !user.rtuEnrollmentNo) {
+      const student = await findStudentByEmail(email);
+      if (student) {
+        user.rtuEnrollmentNo = student.rtuEnrollmentNo || '';
+        user.studentName     = student.studentName || '';
+        user.branch          = student.branch || '';
+        user.currentYearSem  = student.currentYearSem || '';
+        user.phoneNumber     = student.phoneNumber || '';
+        if (!user.rollNumber) user.rollNumber = student.rollNumber || '';
+        await user.save();
+      }
     }
 
     const token = signJWT(user);
