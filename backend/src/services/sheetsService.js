@@ -31,14 +31,29 @@ const COLUMN_MAP = {
  * Build and return an authenticated Google Sheets API client
  */
 const getSheetsClient = () => {
-  const keyPath = path.resolve(process.env.GOOGLE_SERVICE_ACCOUNT_PATH || './service-account.json');
-  if (!fs.existsSync(keyPath)) {
-    throw new Error(`Service account key file not found at: ${keyPath}`);
+  let credentials;
+  if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    try {
+      credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    } catch (parseErr) {
+      throw new Error('Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON: ' + parseErr.message);
+    }
+  } else {
+    const keyPath = path.resolve(process.env.GOOGLE_SERVICE_ACCOUNT_PATH || './service-account.json');
+    if (!fs.existsSync(keyPath)) {
+      throw new Error(`Service account key file not found at: ${keyPath}`);
+    }
+    const raw = fs.readFileSync(keyPath, 'utf-8');
+    credentials = JSON.parse(raw);
   }
-  const auth = new google.auth.GoogleAuth({
-    keyFile: keyPath,
+
+  const { JWT } = require('google-auth-library');
+  const auth = new JWT({
+    email: credentials.client_email,
+    key: credentials.private_key,
     scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
   });
+
   return google.sheets({ version: 'v4', auth });
 };
 
