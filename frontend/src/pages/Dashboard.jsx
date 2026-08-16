@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  User, Award, BookOpen, AlertCircle, RefreshCw, 
+import {
+  User, Award, BookOpen, AlertCircle, RefreshCw,
   Phone, Mail, CheckCircle2, ShieldAlert, AlertTriangle, FileText, Download, QrCode
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
@@ -13,10 +13,11 @@ import { studentAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 export default function Dashboard() {
-  const [profile, setProfile]               = useState(null);
-  const [loading, setLoading]               = useState(true);
-  const [refreshing, setRefreshing]         = useState(false);
-  const [isModalOpen, setIsModalOpen]       = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState('btech');
 
   const fetchProfile = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
@@ -25,7 +26,10 @@ export default function Dashboard() {
     try {
       const res = await studentAPI.getProfile();
       if (res.data?.success) {
-        setProfile(res.data.data);
+        const studentData = res.data.data;
+        setProfile(studentData);
+        const saved = localStorage.getItem('selectedCourse');
+        setSelectedCourse(saved || studentData.primaryCourse || 'btech');
       }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to fetch student data.');
@@ -63,8 +67,8 @@ export default function Dashboard() {
             <p className="text-sm text-gray-500 mb-6">
               Unable to load student record from the Google Sheet database. Please contact T&P Office.
             </p>
-            <button 
-              onClick={() => fetchProfile()} 
+            <button
+              onClick={() => fetchProfile()}
               className="btn-primary inline-flex items-center justify-center gap-2"
             >
               <RefreshCw className="w-4 h-4" /> Retry Fetching
@@ -75,12 +79,21 @@ export default function Dashboard() {
     );
   }
 
+  const activeCourseData = profile.courses?.[selectedCourse] || {
+    sgpa: {},
+    semestersDetails: {},
+    cgpa: null,
+    activeBacklogsCount: 0,
+    backlogDetails: '',
+    isEligibleForPlacements: false
+  };
+
   return (
     <div className="min-h-screen bg-rtu-light pb-12">
       <Navbar studentName={profile.studentName} onRefresh={() => fetchProfile(true)} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
-        
+
         {/* Banner & General Info */}
         <div className="bg-rtu-gradient rounded-3xl p-6 sm:p-8 text-white shadow-rtu-lg relative overflow-hidden">
           {/* Background Accents */}
@@ -101,9 +114,25 @@ export default function Dashboard() {
                   </span>
                 </div>
                 <p className="text-blue-100 text-xs sm:text-sm mt-0.5">
-                  Roll No: <span className="font-semibold text-white">{profile.rollNumber}</span> &bull; 
-                  Enrollment: <span className="font-semibold text-white">{profile.rtuEnrollmentNo}</span>
+                  University Roll No: <span className="font-semibold text-white">{profile.rollNumber}</span> &bull; 
+                  College Roll No: <span className="font-semibold text-white">{profile.collegeRollNo || 'N/A'}</span>
                 </p>
+                
+                {selectedCourse === 'mba' && (activeCourseData.firstSpecialization || activeCourseData.secondSpecialization) && (
+                  <p className="text-blue-100 text-xs mt-1.5 bg-white/10 rounded-lg py-1 px-2.5 inline-block border border-white/10">
+                    MBA Specializations: <span className="font-semibold text-white">{activeCourseData.firstSpecialization || 'NA'}</span> &bull; <span className="font-semibold text-white">{activeCourseData.secondSpecialization || 'NA'}</span>
+                  </p>
+                )}
+                
+                {selectedCourse === 'mtech' && activeCourseData.specialization && (
+                  <div className="mt-1.5 flex flex-col gap-1 text-blue-100 text-xs bg-white/10 rounded-xl p-2.5 border border-white/10 max-w-xl">
+                    <p>M.Tech Specialization: <span className="font-semibold text-white">{activeCourseData.specialization}</span></p>
+                    {activeCourseData.thesisTitle && activeCourseData.thesisTitle !== '0' && activeCourseData.thesisTitle !== 'NA' && (
+                      <p className="italic">Thesis: <span className="font-semibold text-white">"{activeCourseData.thesisTitle}"</span></p>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-4 mt-3 text-xs text-blue-200">
                   <span className="flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-rtu-gold" /> {profile.email}
@@ -129,6 +158,35 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Course Switcher Tabs */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="inline-flex p-1 bg-white border border-gray-200 rounded-2xl shadow-card gap-1">
+            {[
+              { id: 'btech', label: 'B.Tech Program' },
+              { id: 'mba', label: 'MBA Program' },
+              { id: 'mtech', label: 'M.Tech Program' }
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  setSelectedCourse(t.id);
+                  localStorage.setItem('selectedCourse', t.id);
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                  selectedCourse === t.id
+                    ? 'bg-rtu-gradient text-white shadow-md'
+                    : 'text-gray-500 hover:text-rtu-navy hover:bg-gray-50'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <span className="text-xs text-gray-500 font-semibold bg-white border border-gray-150 px-3 py-1.5 rounded-xl shadow-sm">
+            Current View: <strong className="text-rtu-blue uppercase">{selectedCourse}</strong>
+          </span>
+        </div>
+
         {/* Academic Overview Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* CGPA Meter Card */}
@@ -136,25 +194,31 @@ export default function Dashboard() {
             <div className="flex items-center justify-between w-full mb-4">
               <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
                 <Award className="w-4 h-4 text-rtu-blue" />
-                Overall CGPA
+                {selectedCourse === 'mtech' ? 'M.Tech Percentage/CGPA' : 'Overall CGPA'}
               </h3>
-              <span className="text-[10px] bg-blue-50 text-rtu-blue px-2 py-0.5 rounded-full font-semibold">
-                {profile.currentYearSem?.toLowerCase().includes('sem') ? profile.currentYearSem : `Sem ${profile.currentYearSem}`}
+              <span className="text-[10px] bg-blue-50 text-rtu-blue px-2 py-0.5 rounded-full font-semibold uppercase">
+                {selectedCourse}
               </span>
             </div>
             
-            <CGPAMeter cgpa={profile.currentCGPA} />
+            <CGPAMeter cgpa={activeCourseData.cgpa} />
 
             <div className="mt-4 pt-4 border-t border-gray-100 w-full text-center">
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                profile.isEligibleForPlacements 
+                activeCourseData.isEligibleForPlacements 
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                   : 'bg-amber-50 text-amber-700 border border-amber-200'
               }`}>
-                {profile.isEligibleForPlacements ? (
-                  <><CheckCircle2 className="w-3.5 h-3.5" /> Eligible for Placement Drives</>
+                {activeCourseData.isEligibleForPlacements ? (
+                  <>
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
+                    Eligible for Placement Drives
+                  </>
                 ) : (
-                  <><AlertTriangle className="w-3.5 h-3.5" /> Ineligible / Needs Review</>
+                  <>
+                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                    Ineligible / Needs Review
+                  </>
                 )}
               </span>
             </div>
@@ -171,8 +235,8 @@ export default function Dashboard() {
               </div>
 
               <BacklogBadge 
-                count={profile.activeBacklogsCount} 
-                details={profile.backlogDetails} 
+                count={activeCourseData.activeBacklogsCount} 
+                details={activeCourseData.backlogDetails} 
               />
             </div>
 
@@ -198,7 +262,7 @@ export default function Dashboard() {
             <div className="bg-white p-3 rounded-xl border-2 border-dashed border-blue-100 flex items-center justify-center my-auto">
               <QRCodeCanvas
                 id="student-qr-canvas"
-                value={profile.rtuEnrollmentNo || profile.rollNumber || ''}
+                value={profile.rollNumber || ''}
                 size={140}
                 bgColor="#ffffff"
                 fgColor="#003087"
@@ -215,7 +279,7 @@ export default function Dashboard() {
                   if (!canvas) return;
                   const url = canvas.toDataURL('image/png');
                   const link = document.createElement('a');
-                  link.download = `QR_${profile.rtuEnrollmentNo || profile.rollNumber || 'student'}.png`;
+                  link.download = `QR_${profile.rollNumber || 'student'}.png`;
                   link.href = url;
                   link.click();
                 }}
@@ -227,34 +291,65 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Prior Academic Records */}
+        <div className="bg-white rounded-2xl p-6 shadow-card border border-gray-150">
+          <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2 mb-4 font-display">
+            <Award className="w-4 h-4 text-rtu-blue" />
+            Prior Academic Records
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <p className="text-[10px] uppercase font-bold text-gray-400">Class 10th (Percentage/CGPA)</p>
+              <p className="text-lg font-black text-rtu-navy mt-1">{profile.class10 || 'N/A'}</p>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <p className="text-[10px] uppercase font-bold text-gray-400">Class 12th (Percentage/CGPA)</p>
+              <p className="text-lg font-black text-rtu-navy mt-1">{profile.class12 || 'N/A'}</p>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <p className="text-[10px] uppercase font-bold text-gray-400">Diploma (Percentage/CGPA)</p>
+              <p className="text-lg font-black text-rtu-navy mt-1">{profile.diploma || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+
         {/* Semester SGPA Breakdown */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold text-gray-800 flex items-center gap-2 font-display">
               <BookOpen className="w-4 h-4 text-rtu-blue" />
-              Semester-wise SGPA Breakdown
+              Semester-wise Academic Breakdown
             </h2>
             <span className="text-xs text-gray-500 font-medium">
               Data synchronized live with central sheet
             </span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-            <SGPACard sem={1} sgpa={profile.sgpa?.sem1} />
-            <SGPACard sem={2} sgpa={profile.sgpa?.sem2} />
-            <SGPACard sem={3} sgpa={profile.sgpa?.sem3} />
-            <SGPACard sem={4} sgpa={profile.sgpa?.sem4} />
-            <SGPACard sem={5} sgpa={profile.sgpa?.sem5} />
-            <SGPACard sem={6} sgpa={profile.sgpa?.sem6} />
+          <div className={`grid gap-4 ${selectedCourse === 'btech' ? 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-8' : 'grid-cols-2 sm:grid-cols-4'}`}>
+            {Array.from({ length: selectedCourse === 'btech' ? 8 : 4 }, (_, i) => {
+              const semNum = i + 1;
+              const semKey = `sem${semNum}`;
+              const semDetails = activeCourseData.semestersDetails?.[semKey] || {};
+              return (
+                <SGPACard
+                  key={semNum}
+                  sem={semNum}
+                  sgpa={semDetails.sgpa}
+                  result={semDetails.result}
+                  back={semDetails.back || semDetails.backObtained}
+                  pendingBacks={semDetails.backPending || (selectedCourse !== 'btech' ? semDetails.back : undefined)}
+                />
+              );
+            })}
           </div>
         </div>
 
       </main>
 
       {/* Discrepancy Modal */}
-      <DiscrepancyModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <DiscrepancyModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         profile={profile}
       />
     </div>

@@ -94,7 +94,7 @@ exports.scanQRCode = async (req, res) => {
     let student = await User.findOne({
       $or: [
         { rollNumber: identifier },
-        { rtuEnrollmentNo: identifier },
+        { collegeRollNo: identifier },
       ],
     });
 
@@ -105,7 +105,7 @@ exports.scanQRCode = async (req, res) => {
       const sheetStudent = allStudents.find(
         (s) =>
           (s.rollNumber && s.rollNumber.trim().toLowerCase() === identifier.toLowerCase()) ||
-          (s.rtuEnrollmentNo && s.rtuEnrollmentNo.trim().toLowerCase() === identifier.toLowerCase())
+          (s.collegeRollNo && s.collegeRollNo.trim().toLowerCase() === identifier.toLowerCase())
       );
 
       if (sheetStudent && sheetStudent.emailId) {
@@ -113,7 +113,8 @@ exports.scanQRCode = async (req, res) => {
         student = await User.findOne({ email: sheetStudent.emailId.toLowerCase() });
         if (student) {
           // Backfill missing fields from sheet data
-          if (!student.rtuEnrollmentNo) student.rtuEnrollmentNo = sheetStudent.rtuEnrollmentNo || '';
+          if (!student.collegeRollNo) student.collegeRollNo = sheetStudent.collegeRollNo || '';
+          if (!student.rtuEnrollmentNo) student.rtuEnrollmentNo = sheetStudent.collegeRollNo || '';
           if (!student.rollNumber) student.rollNumber = sheetStudent.rollNumber || '';
           if (!student.studentName) student.studentName = sheetStudent.studentName || '';
           if (!student.branch) student.branch = sheetStudent.branch || '';
@@ -148,7 +149,7 @@ exports.getScannedList = async (req, res) => {
   try {
     const { eventId } = req.params;
     const scans = await Attendance.find({ event: eventId })
-      .populate('student', 'rollNumber studentName rtuEnrollmentNo branch currentYearSem phoneNumber')
+      .populate('student', 'rollNumber studentName collegeRollNo branch currentYearSem phoneNumber')
       .sort({ scannedAt: -1 });
     res.json({ success: true, scans });
   } catch (err) {

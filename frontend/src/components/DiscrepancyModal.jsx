@@ -4,19 +4,19 @@ import { studentAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const FIELD_OPTIONS = [
-  { value: 'CGPA',                 label: 'Current CGPA'         },
-  { value: 'SGPA_Sem1',            label: 'SGPA — Semester 1'    },
-  { value: 'SGPA_Sem2',            label: 'SGPA — Semester 2'    },
-  { value: 'SGPA_Sem3',            label: 'SGPA — Semester 3'    },
-  { value: 'SGPA_Sem4',            label: 'SGPA — Semester 4'    },
-  { value: 'SGPA_Sem5',            label: 'SGPA — Semester 5'    },
-  { value: 'SGPA_Sem6',            label: 'SGPA — Semester 6'    },
-  { value: 'Active_Backlogs_Count',label: 'Active Backlogs Count'},
-  { value: 'Backlog_Details',      label: 'Backlog Details'      },
-  { value: 'Branch',               label: 'Branch'               },
-  { value: 'Phone_Number',         label: 'Phone Number'         },
-  { value: 'RTU_Enrollment_No',    label: 'RTU Enrollment No.'   },
-  { value: 'Other',                label: 'Other'                },
+  { value: 'CGPA', label: 'Current CGPA' },
+  { value: 'SGPA_Sem1', label: 'SGPA — Semester 1' },
+  { value: 'SGPA_Sem2', label: 'SGPA — Semester 2' },
+  { value: 'SGPA_Sem3', label: 'SGPA — Semester 3' },
+  { value: 'SGPA_Sem4', label: 'SGPA — Semester 4' },
+  { value: 'SGPA_Sem5', label: 'SGPA — Semester 5' },
+  { value: 'SGPA_Sem6', label: 'SGPA — Semester 6' },
+  { value: 'Active_Backlogs_Count', label: 'Active Backlogs Count' },
+  { value: 'Backlog_Details', label: 'Backlog Details' },
+  { value: 'Branch', label: 'Branch' },
+  { value: 'Phone_Number', label: 'Phone Number' },
+  { value: 'College_Roll_No', label: 'College Roll No.' },
+  { value: 'Other', label: 'Other' },
 ];
 
 /**
@@ -27,29 +27,29 @@ const FIELD_OPTIONS = [
  *   profile {object} - student profile data (for pre-filling current values)
  */
 export default function DiscrepancyModal({ isOpen, onClose, profile }) {
-  const [field, setField]                 = useState('');
-  const [currentValue, setCurrentValue]   = useState('');
+  const [field, setField] = useState('');
+  const [currentValue, setCurrentValue] = useState('');
   const [expectedValue, setExpectedValue] = useState('');
-  const [message, setMessage]             = useState('');
-  const [loading, setLoading]             = useState(false);
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Pre-fill currentValue when field changes
   const handleFieldChange = (val) => {
     setField(val);
     if (!profile) return;
     const map = {
-      CGPA:                  profile.currentCGPA,
-      SGPA_Sem1:             profile.sgpa?.sem1,
-      SGPA_Sem2:             profile.sgpa?.sem2,
-      SGPA_Sem3:             profile.sgpa?.sem3,
-      SGPA_Sem4:             profile.sgpa?.sem4,
-      SGPA_Sem5:             profile.sgpa?.sem5,
-      SGPA_Sem6:             profile.sgpa?.sem6,
+      CGPA: profile.currentCGPA,
+      SGPA_Sem1: profile.sgpa?.sem1,
+      SGPA_Sem2: profile.sgpa?.sem2,
+      SGPA_Sem3: profile.sgpa?.sem3,
+      SGPA_Sem4: profile.sgpa?.sem4,
+      SGPA_Sem5: profile.sgpa?.sem5,
+      SGPA_Sem6: profile.sgpa?.sem6,
       Active_Backlogs_Count: profile.activeBacklogsCount,
-      Backlog_Details:       profile.backlogDetails,
-      Branch:                profile.branch,
-      Phone_Number:          profile.phoneNumber,
-      RTU_Enrollment_No:     profile.rtuEnrollmentNo,
+      Backlog_Details: profile.backlogDetails,
+      Branch: profile.branch,
+      Phone_Number: profile.phoneNumber,
+      College_Roll_No: profile.collegeRollNo,
     };
     setCurrentValue(map[val] !== undefined && map[val] !== null ? String(map[val]) : '');
   };

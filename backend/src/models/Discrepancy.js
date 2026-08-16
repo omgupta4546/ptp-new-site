@@ -32,6 +32,7 @@ const discrepancySchema = new mongoose.Schema(
         'Branch',
         'Phone_Number',
         'RTU_Enrollment_No',
+        'College_Roll_No',
         'Other',
       ],
     },

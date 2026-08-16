@@ -15,6 +15,7 @@ export default function Login() {
   const [email, setEmail]               = useState(initialEmail);
   const [password, setPassword]         = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [course, setCourse]             = useState('btech');
   const [loading, setLoading]           = useState(false);
 
   const setAuth = useAuthStore((s) => s.setAuth);
@@ -30,6 +31,9 @@ export default function Login() {
     try {
       const res = await authAPI.login(email.trim(), password);
       const { token, user } = res.data;
+
+      // Save course selection to localStorage
+      localStorage.setItem('selectedCourse', course);
 
       setAuth(token, user);
       toast.success('Login successful! Welcome to the portal.');
@@ -128,6 +132,30 @@ export default function Login() {
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
+              </div>
+            </div>
+
+            {/* Course selection */}
+            <div>
+              <label htmlFor="login-course" className="block text-xs font-semibold text-gray-600 mb-1.5">
+                Select Course
+              </label>
+              <div className="relative flex items-center">
+                <GraduationCap className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <select
+                  id="login-course"
+                  value={course}
+                  onChange={(e) => setCourse(e.target.value)}
+                  disabled={loading}
+                  className="input-field input-icon-left appearance-none bg-white cursor-pointer pr-10"
+                >
+                  <option value="btech">B.Tech (Bachelor of Technology)</option>
+                  <option value="mba">MBA (Master of Business Administration)</option>
+                  <option value="mtech">M.Tech (Master of Technology)</option>
+                </select>
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-xs text-gray-400">
+                  ▼
+                </span>
               </div>
             </div>
 

@@ -268,7 +268,8 @@ const setPassword = async (req, res) => {
           email,
           hashedPassword,
           rollNumber:      student?.rollNumber || '',
-          rtuEnrollmentNo: student?.rtuEnrollmentNo || '',
+          rtuEnrollmentNo: student?.collegeRollNo || '',
+          collegeRollNo:   student?.collegeRollNo || '',
           studentName:     student?.studentName || '',
           branch:          student?.branch || '',
           currentYearSem:  student?.currentYearSem || '',
@@ -282,7 +283,8 @@ const setPassword = async (req, res) => {
         email,
         hashedPassword,
         rollNumber:      student?.rollNumber || '',
-        rtuEnrollmentNo: student?.rtuEnrollmentNo || '',
+        rtuEnrollmentNo: student?.collegeRollNo || '',
+        collegeRollNo:   student?.collegeRollNo || '',
         studentName:     student?.studentName || '',
         isVerified:      true,
       });
@@ -331,10 +333,11 @@ const login = async (req, res) => {
     }
 
     // Backfill missing profile fields from Google Sheets (for users registered before this fix)
-    if (isDBConnected() && user._id && !user.rtuEnrollmentNo) {
+    if (isDBConnected() && user._id && !user.collegeRollNo) {
       const student = await findStudentByEmail(email);
       if (student) {
-        user.rtuEnrollmentNo = student.rtuEnrollmentNo || '';
+        user.collegeRollNo   = student.collegeRollNo || '';
+        user.rtuEnrollmentNo = student.collegeRollNo || '';
         user.studentName     = student.studentName || '';
         user.branch          = student.branch || '';
         user.currentYearSem  = student.currentYearSem || '';

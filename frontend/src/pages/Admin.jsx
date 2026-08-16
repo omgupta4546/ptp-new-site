@@ -30,7 +30,7 @@ const formatField = (field) => {
 export default function Admin() {
   const navigate = useNavigate();
   const adminToken = useAdminStore((s) => s.adminToken);
-  const adminUser  = useAdminStore((s) => s.adminUser);
+  const adminUser = useAdminStore((s) => s.adminUser);
   const logoutAdmin = useAdminStore((s) => s.logoutAdmin);
 
   const [reports, setReports] = useState([]);
@@ -93,7 +93,7 @@ export default function Admin() {
           setAttVolunteerLink(res.data.link);
           setAttOpen(true);
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, [adminToken]);
 
@@ -305,11 +305,10 @@ export default function Admin() {
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
           <div
             onClick={() => setFilterStatus('all')}
-            className={`cursor-pointer rounded-2xl p-4 transition shadow-sm border ${
-              filterStatus === 'all'
+            className={`cursor-pointer rounded-2xl p-4 transition shadow-sm border ${filterStatus === 'all'
                 ? 'bg-white border-navy-800 ring-2 ring-navy-800'
                 : 'bg-white border-slate-200 hover:border-slate-300'
-            }`}
+              }`}
           >
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Reports</p>
             <p className="text-2xl font-black text-navy-900 mt-1">{totalCount}</p>
@@ -318,11 +317,10 @@ export default function Admin() {
 
           <div
             onClick={() => setFilterStatus('pending')}
-            className={`cursor-pointer rounded-2xl p-4 transition shadow-sm border ${
-              filterStatus === 'pending'
+            className={`cursor-pointer rounded-2xl p-4 transition shadow-sm border ${filterStatus === 'pending'
                 ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-500'
                 : 'bg-white border-slate-200 hover:border-amber-300'
-            }`}
+              }`}
           >
             <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider">⏳ Pending</p>
             <p className="text-2xl font-black text-amber-900 mt-1">{pendingCount}</p>
@@ -331,11 +329,10 @@ export default function Admin() {
 
           <div
             onClick={() => setFilterStatus('under_review')}
-            className={`cursor-pointer rounded-2xl p-4 transition shadow-sm border ${
-              filterStatus === 'under_review'
+            className={`cursor-pointer rounded-2xl p-4 transition shadow-sm border ${filterStatus === 'under_review'
                 ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-500'
                 : 'bg-white border-slate-200 hover:border-blue-300'
-            }`}
+              }`}
           >
             <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider">🔍 Under Review</p>
             <p className="text-2xl font-black text-blue-900 mt-1">{reviewCount}</p>
@@ -344,11 +341,10 @@ export default function Admin() {
 
           <div
             onClick={() => setFilterStatus('resolved')}
-            className={`cursor-pointer rounded-2xl p-4 transition shadow-sm border ${
-              filterStatus === 'resolved'
+            className={`cursor-pointer rounded-2xl p-4 transition shadow-sm border ${filterStatus === 'resolved'
                 ? 'bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500'
                 : 'bg-white border-slate-200 hover:border-emerald-300'
-            }`}
+              }`}
           >
             <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">✅ Resolved</p>
             <p className="text-2xl font-black text-emerald-900 mt-1">{resolvedCount}</p>
@@ -357,11 +353,10 @@ export default function Admin() {
 
           <div
             onClick={() => setFilterStatus('rejected')}
-            className={`cursor-pointer rounded-2xl p-4 transition shadow-sm border ${
-              filterStatus === 'rejected'
+            className={`cursor-pointer rounded-2xl p-4 transition shadow-sm border ${filterStatus === 'rejected'
                 ? 'bg-rose-50 border-rose-500 ring-2 ring-rose-500'
                 : 'bg-white border-slate-200 hover:border-rose-300'
-            }`}
+              }`}
           >
             <p className="text-xs font-semibold text-rose-700 uppercase tracking-wider">❌ Rejected</p>
             <p className="text-2xl font-black text-rose-900 mt-1">{rejectedCount}</p>
@@ -454,11 +449,10 @@ export default function Admin() {
               <button
                 key={st}
                 onClick={() => setFilterStatus(st)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize whitespace-nowrap transition ${
-                  filterStatus === st
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize whitespace-nowrap transition ${filterStatus === st
                     ? 'bg-navy-900 text-white shadow-sm'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
+                  }`}
               >
                 {st.replace('_', ' ')}
               </button>
@@ -582,12 +576,12 @@ export default function Admin() {
                         <td className="py-4 px-4 text-xs text-slate-400 whitespace-nowrap">
                           {report.createdAt
                             ? new Date(report.createdAt).toLocaleDateString('en-IN', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
                             : 'Recent'}
                         </td>
 
@@ -689,11 +683,10 @@ export default function Admin() {
                     <button
                       disabled={updatingId === activeReportModal._id}
                       onClick={() => handleUpdateStatus(activeReportModal._id, 'pending', adminNoteInput)}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition ${
-                        activeReportModal.status === 'pending'
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition ${activeReportModal.status === 'pending'
                           ? 'bg-amber-500 text-white border-amber-600 shadow'
                           : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-                      }`}
+                        }`}
                     >
                       ⏳ Pending
                     </button>
@@ -701,11 +694,10 @@ export default function Admin() {
                     <button
                       disabled={updatingId === activeReportModal._id}
                       onClick={() => handleUpdateStatus(activeReportModal._id, 'under_review', adminNoteInput)}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition ${
-                        activeReportModal.status === 'under_review'
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition ${activeReportModal.status === 'under_review'
                           ? 'bg-blue-600 text-white border-blue-700 shadow'
                           : 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100'
-                      }`}
+                        }`}
                     >
                       🔍 Under Review
                     </button>
@@ -713,11 +705,10 @@ export default function Admin() {
                     <button
                       disabled={updatingId === activeReportModal._id}
                       onClick={() => handleUpdateStatus(activeReportModal._id, 'resolved', adminNoteInput)}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition ${
-                        activeReportModal.status === 'resolved'
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition ${activeReportModal.status === 'resolved'
                           ? 'bg-emerald-600 text-white border-emerald-700 shadow'
                           : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
-                      }`}
+                        }`}
                     >
                       ✅ Resolved
                     </button>
@@ -725,11 +716,10 @@ export default function Admin() {
                     <button
                       disabled={updatingId === activeReportModal._id}
                       onClick={() => handleUpdateStatus(activeReportModal._id, 'rejected', adminNoteInput)}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition ${
-                        activeReportModal.status === 'rejected'
+                      className={`py-2.5 px-3 rounded-xl text-xs font-bold border transition ${activeReportModal.status === 'rejected'
                           ? 'bg-rose-600 text-white border-rose-700 shadow'
                           : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
-                      }`}
+                        }`}
                     >
                       ❌ Reject
                     </button>

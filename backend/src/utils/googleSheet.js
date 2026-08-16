@@ -35,7 +35,7 @@ async function appendAttendanceRow(event, student) {
   // Google Sheets (Sheet1) is the absolute source of truth. Try to fetch the latest live data.
   let rollNumber      = '';
   let studentName     = '';
-  let rtuEnrollmentNo = '';
+  let collegeRollNo   = '';
   let branch          = '';
   let currentYearSem  = '';
   let phoneNumber     = '';
@@ -46,7 +46,7 @@ async function appendAttendanceRow(event, student) {
     if (sheetStudent) {
       rollNumber      = sheetStudent.rollNumber || '';
       studentName     = sheetStudent.studentName || '';
-      rtuEnrollmentNo = sheetStudent.rtuEnrollmentNo || '';
+      collegeRollNo   = sheetStudent.collegeRollNo || '';
       branch          = sheetStudent.branch || '';
       currentYearSem  = sheetStudent.currentYearSem || '';
       phoneNumber     = sheetStudent.phoneNumber || '';
@@ -58,7 +58,7 @@ async function appendAttendanceRow(event, student) {
   // Fall back to MongoDB values only if Sheets lookup failed or returned empty values
   rollNumber      = rollNumber || student.rollNumber || '';
   studentName     = studentName || student.studentName || '';
-  rtuEnrollmentNo = rtuEnrollmentNo || student.rtuEnrollmentNo || '';
+  collegeRollNo   = collegeRollNo || student.collegeRollNo || '';
   branch          = branch || student.branch || '';
   currentYearSem  = currentYearSem || student.currentYearSem || '';
   phoneNumber     = phoneNumber || student.phoneNumber || '';
@@ -67,7 +67,7 @@ async function appendAttendanceRow(event, student) {
   const values = [
     rollNumber,           // A: Roll_Number
     studentName,          // B: Student_Name
-    rtuEnrollmentNo,      // C: RTU_Enrollment_No
+    collegeRollNo,        // C: College_Roll_Number / College Roll No.
     branch,               // D: Branch
     currentYearSem,       // E: Current_Year_Sem
     phoneNumber,          // F: Phone_Number

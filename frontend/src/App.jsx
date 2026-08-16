@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import useAuthStore from './store/authStore';
 import useAdminStore from './store/adminStore';
@@ -42,6 +43,32 @@ const AdminAttendanceRoute = ({ children }) => {
 };
 
 export default function App() {
+  const [hydrated, setHydrated] = useState(useAuthStore.persist.hasHydrated());
+
+  useEffect(() => {
+    // If already hydrated
+    if (useAuthStore.persist.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    // Listen for hydration finish
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setHydrated(true);
+    });
+    setHydrated(useAuthStore.persist.hasHydrated());
+    return () => unsub();
+  }, []);
+
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen bg-rtu-light flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-rtu-navy border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />

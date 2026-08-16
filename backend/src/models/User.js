@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    collegeRollNo: {
+      type: String,
+      default: null,
+    },
     branch: {
       type: String,
       default: null,

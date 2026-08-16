@@ -5,26 +5,77 @@ const fs = require('fs');
 // ── In-memory cache ────────────────────────────────────────────────────────────
 let cachedData = null;       // Array of student objects
 let lastFetchedAt = null;    // Timestamp of last fetch
-const CACHE_TTL_MS = 10 * 1000; // 10 seconds for instant live updates
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes in-memory cache for fast responses
 
 // ── Column header → JS key mapping ────────────────────────────────────────────
-const COLUMN_MAP = {
-  roll_number:           'rollNumber',
-  student_name:          'studentName',
-  rtu_enrollment_no:     'rtuEnrollmentNo',
-  branch:                'branch',
-  current_year_sem:      'currentYearSem',
-  email_id:              'emailId',
-  phone_number:          'phoneNumber',
-  sgpa_sem1:             'sgpaSem1',
-  sgpa_sem2:             'sgpaSem2',
-  sgpa_sem3:             'sgpaSem3',
-  sgpa_sem4:             'sgpaSem4',
-  sgpa_sem5:             'sgpaSem5',
-  sgpa_sem6:             'sgpaSem6',
-  current_cgpa:          'currentCGPA',
-  active_backlogs_count: 'activeBacklogsCount',
-  backlog_details:       'backlogDetails',
+const mapHeadersToKeys = (headers) => {
+  return headers.map(h => {
+    if (!h) return '';
+    const clean = h.toLowerCase().trim();
+    
+    // Core fields
+    if (clean.includes('university roll') || clean.includes('university_roll') || clean.includes('roll_number') || clean === 'roll number') return 'rollNumber';
+    if (clean.includes('college roll') || clean.includes('college_roll')) return 'collegeRollNo';
+    if (clean.includes('student_name') || clean === 'student name') return 'studentName';
+    if (clean.includes('branch')) return 'branch';
+    if (clean.includes('current_year_sem') || clean.includes('current year') || clean.includes('year/sem')) return 'currentYearSem';
+    if (clean.includes('email_id') || clean.includes('email id')) return 'emailId';
+    if (clean.includes('phone_number') || clean.includes('phone number')) return 'phoneNumber';
+    
+    // Schooling & Diploma
+    if (clean.includes('class 10') || clean.includes('10th')) return 'class10';
+    if (clean.includes('class 12') || clean.includes('12th')) return 'class12';
+    if (clean.includes('diploma')) return 'diploma';
+    
+    // B.Tech
+    if (clean.includes('b.tech')) {
+      const semMatch = clean.match(/(\d)(st|nd|rd|th)\s+sem/);
+      if (semMatch) {
+        const semNum = semMatch[1];
+        if (clean.startsWith('sgpa')) return `btech_sgpaSem${semNum}`;
+        if (clean.startsWith('result')) return `btech_resultSem${semNum}`;
+        if (clean.includes('obtained')) return `btech_backObtainedSem${semNum}`;
+        if (clean.includes('pending')) return `btech_backPendingSem${semNum}`;
+      }
+    }
+    
+    // MBA
+    if (clean.includes('mba')) {
+      if (clean.includes('first specialization')) return 'mba_firstSpecialization';
+      if (clean.includes('second specialization')) return 'mba_secondSpecialization';
+      
+      const semMatch = clean.match(/(\d)(st|nd|rd|th)\s+sem/);
+      if (semMatch) {
+        const semNum = semMatch[1];
+        if (clean.startsWith('sgpa')) return `mba_sgpaSem${semNum}`;
+        if (clean.startsWith('result')) return `mba_resultSem${semNum}`;
+        if (clean.includes('back paper')) return `mba_backSem${semNum}`;
+      }
+      
+      if (clean.includes('total agrr. cgpa') || clean.includes('cgpa in mba')) return 'mba_cgpa';
+      if (clean.includes('total pending back')) return 'mba_pendingBacks';
+    }
+    
+    // M.Tech
+    if (clean.includes('m.tech')) {
+      if (clean.includes('branch/specialization')) return 'mtech_specialization';
+      if (clean.includes('dissertation thesis')) return 'mtech_thesisTitle';
+      
+      const semMatch = clean.match(/(\d)(st|nd|rd|th)\s+sem/);
+      if (semMatch) {
+        const semNum = semMatch[1];
+        if (clean.includes('percentage/sgpa')) return `mtech_sgpaSem${semNum}`;
+        if (clean.startsWith('result')) return `mtech_resultSem${semNum}`;
+        if (clean.includes('back paper pending')) return `mtech_backSem${semNum}`;
+      }
+      
+      if (clean.includes('percentage/cgpa in m.tech')) return 'mtech_cgpa';
+      if (clean.includes('back paper pending in m.tech') || clean.includes('number of back paper pending in m.tech')) return 'mtech_pendingBacks';
+    }
+    
+    // General / fallback
+    return clean.replace(/[^a-z0-9]/g, '_');
+  });
 };
 
 /**
@@ -58,12 +109,6 @@ const getSheetsClient = () => {
 };
 
 /**
- * Normalise a header string to the COLUMN_MAP key format
- */
-const normaliseHeader = (header) =>
-  header.trim().toLowerCase().replace(/[\s-]/g, '_');
-
-/**
  * Fallback CSV reader to load local students_sample.csv if Google Sheets API fails or key is missing
  */
 const fetchFallbackLocalCSV = () => {
@@ -78,18 +123,18 @@ const fetchFallbackLocalCSV = () => {
   if (lines.length < 2) return [];
 
   // Parse CSV headers
-  const headers = lines[0].split(',').map(normaliseHeader);
+  const headers = lines[0].split(',');
+  const jsKeys = mapHeadersToKeys(headers);
 
   // Simple CSV parser for lines
   const students = lines.slice(1).map((line) => {
     // Handle quoted fields
     const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
     const student = {};
-    headers.forEach((header, idx) => {
-      const jsKey = COLUMN_MAP[header] || header;
+    jsKeys.forEach((jsKey, idx) => {
       let val = values[idx] !== undefined ? String(values[idx]).trim() : '';
       val = val.replace(/^"|"$/g, ''); // strip quotes
-      student[jsKey] = val;
+      if (jsKey) student[jsKey] = val;
     });
     return student;
   });
@@ -112,7 +157,7 @@ const fetchAllStudents = async (force = false) => {
   try {
     const sheets = getSheetsClient();
     const sheetId = process.env.GOOGLE_SHEET_ID;
-    const range   = process.env.GOOGLE_SHEET_RANGE || 'Sheet1!A1:P500';
+    const range = process.env.GOOGLE_SHEET_RANGE || 'Sheet1!A1:BT';
 
     if (!sheetId || sheetId === 'sample_sheet_id') {
       throw new Error('GOOGLE_SHEET_ID is not configured in backend/.env');
@@ -126,23 +171,23 @@ const fetchAllStudents = async (force = false) => {
     const rows = response.data.values;
     if (!rows || rows.length < 2) {
       console.warn('⚠️  Google Sheet returned no data rows.');
-      cachedData    = [];
+      cachedData = [];
       lastFetchedAt = now;
       return cachedData;
     }
 
-    const headers = rows[0].map(normaliseHeader);
+    const headers = rows[0];
+    const jsKeys = mapHeadersToKeys(headers);
     const students = rows.slice(1).map((row) => {
       const student = {};
-      headers.forEach((header, idx) => {
-        const jsKey = COLUMN_MAP[header] || header;
-        student[jsKey] = row[idx] !== undefined ? String(row[idx]).trim() : '';
+      jsKeys.forEach((jsKey, idx) => {
+        if (jsKey) student[jsKey] = row[idx] !== undefined ? String(row[idx]).trim() : '';
       });
       return student;
     });
 
     const filtered = students.filter((s) => s.emailId || s.rollNumber);
-    cachedData    = filtered;
+    cachedData = filtered;
     lastFetchedAt = now;
     console.log(`📊 Loaded ${filtered.length} student records live from Google Sheets`);
     return filtered;
@@ -151,7 +196,7 @@ const fetchAllStudents = async (force = false) => {
     console.log('🔄 Falling back to local student records (students_sample.csv)...');
 
     const fallbackData = fetchFallbackLocalCSV();
-    cachedData    = fallbackData;
+    cachedData = fallbackData;
     lastFetchedAt = now;
     return cachedData;
   }
@@ -162,8 +207,9 @@ const fetchAllStudents = async (force = false) => {
  */
 const findStudentByEmail = async (email) => {
   const students = await fetchAllStudents();
-  const target   = email.trim().toLowerCase();
-  return students.find((s) => s.emailId.toLowerCase() === target) || null;
+  if (!email) return null;
+  const target = email.trim().toLowerCase();
+  return students.find((s) => s.emailId && s.emailId.trim().toLowerCase() === target) || null;
 };
 
 /**

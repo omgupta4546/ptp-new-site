@@ -33,7 +33,7 @@ const VolunteerScanner = () => {
         scanner
           .start(
             cameraId,
-            { fps: 15, qrbox: { width: 300, height: 300 } },
+            { fps: 25, qrbox: { width: 300, height: 300 } },
             async (decodedText) => {
               // Prevent duplicate rapid scans
               if (isProcessing.current) return;
@@ -53,7 +53,7 @@ const VolunteerScanner = () => {
                   setTimeout(() => {
                     isProcessing.current = false;
                     setMessage('Ready — scan next QR code');
-                  }, 2000);
+                  }, 400);
                   return;
                 }
 
@@ -84,11 +84,11 @@ const VolunteerScanner = () => {
                 toast.error(errMsg);
                 setMessage(`❌ Error: ${errMsg}`);
               } finally {
-                // Allow next scan after 2 seconds
+                // Allow next scan after 400ms
                 setTimeout(() => {
                   isProcessing.current = false;
                   setMessage('Ready — scan next QR code');
-                }, 2000);
+                }, 400);
               }
             },
             (errorMessage) => { console.warn('QR Scan error:', errorMessage); }
