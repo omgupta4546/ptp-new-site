@@ -18,11 +18,15 @@ const mapHeadersToKeys = (headers) => {
     if (clean.includes('class 12') || clean.includes('12th')) return 'class12';
     if (clean.includes('diploma')) return 'diploma';
     
+    const extractSemNumber = (str) => {
+      const m = str.match(/(\d)(st|nd|rd|th)?[\s\._\-]*sem/i) || str.match(/sem(?:ester)?[\s\._\-]*(\d)/i);
+      return m ? m[1] : null;
+    };
+
     // B.Tech
     if (clean.includes('b.tech') || clean.includes('btech')) {
-      const semMatch = clean.match(/(\d)(st|nd|rd|th)\s+sem/);
-      if (semMatch) {
-        const semNum = semMatch[1];
+      const semNum = extractSemNumber(clean);
+      if (semNum) {
         if (clean.startsWith('sgpa') || clean.includes('sgpa')) return `btech_sgpaSem${semNum}`;
         if (clean.startsWith('result') || clean.includes('result')) return `btech_resultSem${semNum}`;
         if (clean.includes('obtained')) return `btech_backObtainedSem${semNum}`;
@@ -35,12 +39,11 @@ const mapHeadersToKeys = (headers) => {
       if (clean.includes('first specialization')) return 'mba_firstSpecialization';
       if (clean.includes('second specialization')) return 'mba_secondSpecialization';
       
-      const semMatch = clean.match(/(\d)(st|nd|rd|th)\s+sem/);
-      if (semMatch) {
-        const semNum = semMatch[1];
-        if (clean.startsWith('sgpa')) return `mba_sgpaSem${semNum}`;
-        if (clean.startsWith('result')) return `mba_resultSem${semNum}`;
-        if (clean.includes('back paper')) return `mba_backSem${semNum}`;
+      const semNum = extractSemNumber(clean);
+      if (semNum) {
+        if (clean.startsWith('sgpa') || clean.includes('sgpa')) return `mba_sgpaSem${semNum}`;
+        if (clean.startsWith('result') || clean.includes('result')) return `mba_resultSem${semNum}`;
+        if (clean.includes('back paper') || clean.includes('back')) return `mba_backSem${semNum}`;
       }
       
       if (clean.includes('total agrr. cgpa') || clean.includes('cgpa in mba')) return 'mba_cgpa';
@@ -52,15 +55,14 @@ const mapHeadersToKeys = (headers) => {
       if (clean.includes('branch') || clean.includes('specialization')) return 'mtech_specialization';
       if (clean.includes('dissertation thesis')) return 'mtech_thesisTitle';
       
-      const semMatch = clean.match(/(\d)(st|nd|rd|th)\s+sem/);
-      if (semMatch) {
-        const semNum = semMatch[1];
-        if (clean.includes('percentage/sgpa')) return `mtech_sgpaSem${semNum}`;
-        if (clean.startsWith('result')) return `mtech_resultSem${semNum}`;
-        if (clean.includes('back paper pending')) return `mtech_backSem${semNum}`;
+      const semNum = extractSemNumber(clean);
+      if (semNum) {
+        if (clean.includes('percentage/sgpa') || clean.includes('sgpa') || clean.includes('percentage')) return `mtech_sgpaSem${semNum}`;
+        if (clean.startsWith('result') || clean.includes('result')) return `mtech_resultSem${semNum}`;
+        if (clean.includes('back paper pending') || clean.includes('back')) return `mtech_backSem${semNum}`;
       }
       
-      if (clean.includes('percentage/cgpa in m.tech')) return 'mtech_cgpa';
+      if (clean.includes('percentage/cgpa in m.tech') || clean.includes('cgpa')) return 'mtech_cgpa';
       if (clean.includes('back paper pending in m.tech') || clean.includes('number of back paper pending in m.tech')) return 'mtech_pendingBacks';
     }
 
