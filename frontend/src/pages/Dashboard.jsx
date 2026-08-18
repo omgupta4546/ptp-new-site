@@ -1,13 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   User, Award, BookOpen, AlertCircle, RefreshCw,
-  Phone, Mail, CheckCircle2, ShieldAlert, AlertTriangle, FileText, Download, QrCode
+  Phone, Mail, CheckCircle2, ShieldAlert, AlertTriangle, FileText, Download, QrCode, Calendar
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import CGPAMeter from '../components/CGPAMeter';
 import SGPACard from '../components/SGPACard';
 import BacklogBadge from '../components/BacklogBadge';
-import DiscrepancyModal from '../components/DiscrepancyModal';
 import { QRCodeCanvas } from 'qrcode.react';
 import { studentAPI } from '../services/api';
 import toast from 'react-hot-toast';
@@ -16,7 +15,6 @@ export default function Dashboard() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState('btech');
 
   const fetchProfile = useCallback(async (isSilent = false) => {
@@ -140,20 +138,13 @@ export default function Dashboard() {
                   <span className="flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-rtu-gold" /> {profile.phoneNumber || 'N/A'}
                   </span>
+                  {profile.dob && (
+                    <span className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-rtu-gold" /> DOB: {profile.dob}
+                    </span>
+                  )}
                 </div>
               </div>
-            </div>
-
-            {/* Quick Actions / Discrepancy Button */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-              <button
-                id="report-discrepancy-btn"
-                onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-xs font-semibold text-white flex items-center justify-center gap-2 transition-all duration-200"
-              >
-                <FileText className="w-4 h-4 text-rtu-gold" />
-                Report Discrepancy
-              </button>
             </div>
           </div>
         </div>
@@ -345,13 +336,6 @@ export default function Dashboard() {
         </div>
 
       </main>
-
-      {/* Discrepancy Modal */}
-      <DiscrepancyModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        profile={profile}
-      />
     </div>
   );
 }

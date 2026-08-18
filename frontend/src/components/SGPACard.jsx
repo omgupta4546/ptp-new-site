@@ -74,7 +74,7 @@ export default function SGPACard({ sem, sgpa, result, back, pendingBacks }) {
           <div className="w-full text-center">
             {pendingBacks !== undefined && parseInt(pendingBacks, 10) > 0 && (
               <span className="text-[9px] text-rose-600 font-bold block mb-0.5">
-                Backs: {pendingBacks}
+                Pending Back: {pendingBacks}
               </span>
             )}
             {back && back !== '0' && back !== String(pendingBacks) && (

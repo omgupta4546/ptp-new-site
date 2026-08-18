@@ -13,27 +13,18 @@ const mapHeadersToKeys = (headers) => {
     if (!h) return '';
     const clean = h.toLowerCase().trim();
     
-    // Core fields
-    if (clean.includes('university roll') || clean.includes('university_roll') || clean.includes('roll_number') || clean === 'roll number') return 'rollNumber';
-    if (clean.includes('college roll') || clean.includes('college_roll')) return 'collegeRollNo';
-    if (clean.includes('student_name') || clean === 'student name') return 'studentName';
-    if (clean.includes('branch')) return 'branch';
-    if (clean.includes('current_year_sem') || clean.includes('current year') || clean.includes('year/sem')) return 'currentYearSem';
-    if (clean.includes('email_id') || clean.includes('email id')) return 'emailId';
-    if (clean.includes('phone_number') || clean.includes('phone number')) return 'phoneNumber';
-    
     // Schooling & Diploma
     if (clean.includes('class 10') || clean.includes('10th')) return 'class10';
     if (clean.includes('class 12') || clean.includes('12th')) return 'class12';
     if (clean.includes('diploma')) return 'diploma';
     
     // B.Tech
-    if (clean.includes('b.tech')) {
+    if (clean.includes('b.tech') || clean.includes('btech')) {
       const semMatch = clean.match(/(\d)(st|nd|rd|th)\s+sem/);
       if (semMatch) {
         const semNum = semMatch[1];
-        if (clean.startsWith('sgpa')) return `btech_sgpaSem${semNum}`;
-        if (clean.startsWith('result')) return `btech_resultSem${semNum}`;
+        if (clean.startsWith('sgpa') || clean.includes('sgpa')) return `btech_sgpaSem${semNum}`;
+        if (clean.startsWith('result') || clean.includes('result')) return `btech_resultSem${semNum}`;
         if (clean.includes('obtained')) return `btech_backObtainedSem${semNum}`;
         if (clean.includes('pending')) return `btech_backPendingSem${semNum}`;
       }
@@ -57,8 +48,8 @@ const mapHeadersToKeys = (headers) => {
     }
     
     // M.Tech
-    if (clean.includes('m.tech')) {
-      if (clean.includes('branch/specialization')) return 'mtech_specialization';
+    if (clean.includes('m.tech') || clean.includes('mtech')) {
+      if (clean.includes('branch') || clean.includes('specialization')) return 'mtech_specialization';
       if (clean.includes('dissertation thesis')) return 'mtech_thesisTitle';
       
       const semMatch = clean.match(/(\d)(st|nd|rd|th)\s+sem/);
@@ -72,6 +63,16 @@ const mapHeadersToKeys = (headers) => {
       if (clean.includes('percentage/cgpa in m.tech')) return 'mtech_cgpa';
       if (clean.includes('back paper pending in m.tech') || clean.includes('number of back paper pending in m.tech')) return 'mtech_pendingBacks';
     }
+
+    // Core fields
+    if (clean.includes('university roll') || clean.includes('university_roll') || clean.includes('roll_number') || clean === 'roll number') return 'rollNumber';
+    if (clean.includes('college roll') || clean.includes('college_roll')) return 'collegeRollNo';
+    if (clean.includes('student_name') || clean === 'student name') return 'studentName';
+    if (clean === 'branch' || clean === 'branch_name' || (clean.includes('branch') && !clean.includes('m.tech') && !clean.includes('mtech') && !clean.includes('mba'))) return 'branch';
+    if (clean.includes('current_year_sem') || clean.includes('current year') || clean.includes('year/sem')) return 'currentYearSem';
+    if (clean.includes('email_id') || clean.includes('email id')) return 'emailId';
+    if (clean.includes('phone_number') || clean.includes('phone number')) return 'phoneNumber';
+    if (clean.includes('date of birth') || clean === 'dob' || clean.includes('birth')) return 'dob';
     
     // General / fallback
     return clean.replace(/[^a-z0-9]/g, '_');

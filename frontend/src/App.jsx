@@ -11,6 +11,9 @@ import Admin       from './pages/Admin';
 import AdminLogin  from './pages/AdminLogin';
 import AttendanceControl from './pages/AttendanceControl';
 import VolunteerScanner from './pages/VolunteerScanner';
+import ForgotPassword from './pages/ForgotPassword';
+import AdminForgotPassword from './pages/AdminForgotPassword';
+import ResetPassword  from './pages/ResetPassword';
 
 // Student Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -74,17 +77,20 @@ export default function App() {
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       {/* Student Auth Flow */}
-      <Route path="/register"     element={<PublicRoute><Register /></PublicRoute>} />
-      <Route path="/verify-otp"   element={<PublicRoute><VerifyOTP /></PublicRoute>} />
-      <Route path="/set-password" element={<PublicRoute><SetPassword /></PublicRoute>} />
-      <Route path="/login"        element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/register"        element={<PublicRoute><Register /></PublicRoute>} />
+      <Route path="/verify-otp"      element={<PublicRoute><VerifyOTP /></PublicRoute>} />
+      <Route path="/set-password"    element={<PublicRoute><SetPassword /></PublicRoute>} />
+      <Route path="/login"           element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password"  element={<ResetPassword />} />
 
       {/* Student Protected Portal */}
       <Route path="/dashboard"    element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
       {/* Admin Auth Flow */}
-      <Route path="/admin/login"  element={<AdminPublicRoute><AdminLogin /></AdminPublicRoute>} />
-      <Route path="/admin"        element={<AdminProtectedRoute><Admin /></AdminProtectedRoute>} />
+      <Route path="/admin/login"           element={<AdminPublicRoute><AdminLogin /></AdminPublicRoute>} />
+      <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
+      <Route path="/admin"                 element={<AdminProtectedRoute><Admin /></AdminProtectedRoute>} />
 
       {/* Attendance routes */}
       <Route path="/admin/attendance" element={<AdminProtectedRoute><AttendanceControl /></AdminProtectedRoute>} />

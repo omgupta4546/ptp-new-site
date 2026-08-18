@@ -1,9 +1,7 @@
 const mongoose = require('mongoose');
-const Discrepancy = require('../models/Discrepancy');
 const { findStudentByEmail, refreshCache } = require('../services/sheetsService');
 
 const isDBConnected = () => mongoose.connection.readyState === 1;
-const memoryDiscrepancies = [];
 
 /**
  * GET /api/student/me
@@ -81,11 +79,15 @@ const getMyProfile = async (req, res) => {
     // 2. MBA Data Processing
     const mba_sgpa = {};
     const mba_semestersDetails = {};
+    const mbaSGPAs = [];
     let mbaActiveBacklogs = 0;
     const mbaBackDetailsList = [];
     for (let i = 1; i <= 4; i++) {
       const val = parseSGPA(student[`mba_sgpaSem${i}`]);
       mba_sgpa[`sem${i}`] = val;
+      if (val !== null && val > 0) {
+        mbaSGPAs.push(val);
+      }
 
       const backValRaw = student[`mba_backSem${i}`] || '';
       const backValNum = parseInt(backValRaw, 10);
@@ -111,27 +113,38 @@ const getMyProfile = async (req, res) => {
         back: backValRaw
       };
     }
-    const mbaCGPA = parseSGPA(student.mba_cgpa);
+    
+    let mbaComputedCGPA = null;
+    if (mbaSGPAs.length > 0) {
+      const sum = mbaSGPAs.reduce((acc, curr) => acc + curr, 0);
+      mbaComputedCGPA = parseFloat((sum / mbaSGPAs.length).toFixed(2));
+    } else {
+      mbaComputedCGPA = parseSGPA(student.mba_cgpa);
+    }
 
     const mbaData = {
       sgpa: mba_sgpa,
       semestersDetails: mba_semestersDetails,
-      cgpa: mbaCGPA,
+      cgpa: mbaComputedCGPA,
       activeBacklogsCount: mbaActiveBacklogs,
       firstSpecialization: student.mba_firstSpecialization || '',
       secondSpecialization: student.mba_secondSpecialization || '',
       backlogDetails: mbaBackDetailsList.join(', ') || student.backlogDetails || '',
-      isEligibleForPlacements: (mbaCGPA || 0) >= 7.0 && mbaActiveBacklogs === 0
+      isEligibleForPlacements: (mbaComputedCGPA || 0) >= 7.0 && mbaActiveBacklogs === 0
     };
 
     // 3. M.Tech Data Processing
     const mtech_sgpa = {};
     const mtech_semestersDetails = {};
+    const mtechSGPAs = [];
     let mtechActiveBacklogs = 0;
     const mtechBackDetailsList = [];
     for (let i = 1; i <= 4; i++) {
       const val = parseSGPA(student[`mtech_sgpaSem${i}`]);
       mtech_sgpa[`sem${i}`] = val;
+      if (val !== null && val > 0) {
+        mtechSGPAs.push(val);
+      }
 
       const backValRaw = student[`mtech_backSem${i}`] || '';
       const backValNum = parseInt(backValRaw, 10);
@@ -157,17 +170,24 @@ const getMyProfile = async (req, res) => {
         back: backValRaw
       };
     }
-    const mtechCGPA = parseSGPA(student.mtech_cgpa);
+    
+    let mtechComputedCGPA = null;
+    if (mtechSGPAs.length > 0) {
+      const sum = mtechSGPAs.reduce((acc, curr) => acc + curr, 0);
+      mtechComputedCGPA = parseFloat((sum / mtechSGPAs.length).toFixed(2));
+    } else {
+      mtechComputedCGPA = parseSGPA(student.mtech_cgpa);
+    }
 
     const mtechData = {
       sgpa: mtech_sgpa,
       semestersDetails: mtech_semestersDetails,
-      cgpa: mtechCGPA,
+      cgpa: mtechComputedCGPA,
       activeBacklogsCount: mtechActiveBacklogs,
       specialization: student.mtech_specialization || '',
       thesisTitle: student.mtech_thesisTitle || '',
       backlogDetails: mtechBackDetailsList.join(', ') || student.backlogDetails || '',
-      isEligibleForPlacements: (mtechCGPA || 0) >= 7.0 && mtechActiveBacklogs === 0
+      isEligibleForPlacements: (mtechComputedCGPA || 0) >= 7.0 && mtechActiveBacklogs === 0
     };
 
     // Determine primary course based on sheet columns
@@ -192,6 +212,7 @@ const getMyProfile = async (req, res) => {
       currentYearSem: student.currentYearSem,
       email: student.emailId,
       phoneNumber: student.phoneNumber,
+      dob: student.dob || '',
 
       // Root details (backward compatibility)
       sgpa: activeCourseData.sgpa,
@@ -217,64 +238,6 @@ const getMyProfile = async (req, res) => {
 };
 
 /**
- * POST /api/student/discrepancy
- */
-const reportDiscrepancy = async (req, res) => {
-  try {
-    const email = req.user.email;
-    const rawField = req.body.field || req.body.fieldName;
-    const currentVal = req.body.currentValue;
-    const expectedVal = req.body.expectedValue || req.body.requestedValue;
-    const msg = req.body.additionalMessage || req.body.reason || req.body.message || '';
-
-    if (!rawField || currentVal === undefined || expectedVal === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: 'field, currentValue, and expectedValue are required.',
-      });
-    }
-
-    const student = await findStudentByEmail(email);
-
-    let reportId = Date.now().toString();
-    if (isDBConnected()) {
-      const discrepancy = await Discrepancy.create({
-        email,
-        rollNumber: student?.rollNumber || req.user.rollNumber || '',
-        studentName: student?.studentName || '',
-        field: rawField,
-        currentValue: String(currentVal),
-        expectedValue: String(expectedVal),
-        additionalMessage: String(msg),
-      });
-      reportId = discrepancy._id;
-    } else {
-      memoryDiscrepancies.push({
-        id: reportId,
-        email,
-        rollNumber: student?.rollNumber || '',
-        studentName: student?.studentName || '',
-        field: rawField,
-        currentValue: String(currentVal),
-        expectedValue: String(expectedVal),
-        additionalMessage: String(msg),
-        createdAt: new Date(),
-      });
-      console.log('📌 [MEMORY DISCREPANCY LOGGED]:', { email, field: rawField, currentVal, expectedVal });
-    }
-
-    res.status(201).json({
-      success: true,
-      message: 'Discrepancy report submitted successfully. The T&P Office will review it shortly.',
-      data: { id: reportId },
-    });
-  } catch (err) {
-    console.error('reportDiscrepancy error:', err.message);
-    res.status(500).json({ success: false, message: 'Server error submitting discrepancy.' });
-  }
-};
-
-/**
  * POST /api/student/refresh-data
  */
 const refreshSheetData = async (req, res) => {
@@ -287,4 +250,4 @@ const refreshSheetData = async (req, res) => {
   }
 };
 
-module.exports = { getMyProfile, reportDiscrepancy, refreshSheetData };
+module.exports = { getMyProfile, refreshSheetData };

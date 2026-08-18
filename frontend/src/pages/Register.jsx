@@ -105,6 +105,11 @@ export default function Register() {
               </p>
             </div>
 
+            {/* Spam Notice */}
+            <div className="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-r-xl text-xs text-amber-800 leading-relaxed">
+              📌 <strong>Notice:</strong> Please check your <strong>Spam / Junk</strong> folder if you do not see the OTP email in your primary inbox.
+            </div>
+
             {/* Submit */}
             <button
               id="register-submit-btn"

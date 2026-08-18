@@ -65,7 +65,7 @@ const startServer = async () => {
   await connectDB();
   await verifyMailerConnection();
 
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔══════════════════════════════════════════════════╗
 ║   🎓  RTU Placement Cell Portal — Backend API    ║

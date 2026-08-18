@@ -125,11 +125,16 @@ export default function VerifyOTP() {
         {/* Card */}
         <div className="glass-card p-8">
           {/* Email indicator */}
-          <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 rounded-xl border border-blue-100 mb-6">
+          <div className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-50 rounded-xl border border-blue-100 mb-3">
             <ShieldCheck className="w-4 h-4 text-rtu-blue" />
             <p className="text-xs text-rtu-blue font-medium truncate">
               OTP sent to <strong>{email}</strong>
             </p>
+          </div>
+
+          {/* Spam Notice */}
+          <div className="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-r-xl text-xs text-amber-800 mb-6 leading-relaxed">
+            📌 <strong>Notice:</strong> Check your <strong>Spam / Junk</strong> folder if you cannot find the OTP email in your primary inbox.
           </div>
 
           {/* OTP Input */}

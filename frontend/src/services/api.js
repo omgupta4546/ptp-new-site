@@ -72,21 +72,27 @@ export const authAPI = {
       headers: { Authorization: `Bearer ${token}` },
     }),
   login:          (email, password)  => api.post('/auth/login',          { email, password }),
+  forgotPassword: (email)            => api.post('/auth/forgot-password', { email }),
+  resetPassword:  (password, token)  =>
+    api.post('/auth/reset-password', { password }, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 };
 
 // ── Student API ───────────────────────────────────────────────────────────────
 export const studentAPI = {
   getProfile:        ()       => api.get('/student/me'),
-  reportDiscrepancy: (data)   => api.post('/student/discrepancy', data),
   refreshData:       ()       => api.post('/student/refresh-data'),
 };
 
 // ── Admin API ─────────────────────────────────────────────────────────────────
 export const adminAPI = {
-  adminLogin:              (username, password) => api.post('/admin/login', { username, password }),
-  getDiscrepancies:        ()                   => api.get('/admin/discrepancies'),
-  updateDiscrepancyStatus: (id, status, adminNote) =>
-    api.patch(`/admin/discrepancies/${id}`, { status, adminNote }),
+  adminLogin:     (username, password) => api.post('/admin/login', { username, password }),
+  forgotPassword: (email)              => api.post('/admin/forgot-password', { email }),
+  resetPassword:  (password, token)    =>
+    api.post('/admin/reset-password', { password }, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 };
 
 export default api;

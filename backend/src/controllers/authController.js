@@ -7,7 +7,7 @@ const path     = require('path');
 
 const User           = require('../models/User');
 const OTP            = require('../models/OTP');
-const { sendOTPEmail }        = require('../services/mailer');
+const { sendOTPEmail, sendResetPasswordEmail }        = require('../services/mailer');
 const { emailExistsInSheet, findStudentByEmail } = require('../services/sheetsService');
 
 // ── Persistent Dev Fallback Store (Saves to .dev_users.json so Nodemon restarts keep user accounts)
@@ -364,4 +364,117 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { checkEmail, sendOTP, verifyOTP, setPassword, login };
+/**
+ * POST /api/auth/forgot-password
+ */
+const forgotPassword = async (req, res) => {
+  try {
+    const email = (req.body.email || '').trim().toLowerCase();
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required.' });
+    }
+
+    // 1. Check if user is registered and verified
+    let user = null;
+    if (isDBConnected()) {
+      user = await User.findOne({ email });
+    } else {
+      user = memoryUsers.get(email);
+    }
+
+    if (!user || !user.isVerified) {
+      return res.status(404).json({
+        success: false,
+        message: 'No registered student account found with this email.',
+      });
+    }
+
+    // 2. Generate Reset JWT
+    const resetToken = jwt.sign(
+      { email, purpose: 'reset-password' },
+      process.env.JWT_SECRET || 'fallback_secret',
+      { expiresIn: '15m' }
+    );
+
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetLink = `${clientUrl}/reset-password?token=${resetToken}&role=student`;
+
+    console.log(`\n🔑 [RESET LINK] link for student ${email}: >>> ${resetLink} <<<\n`);
+
+    try {
+      await sendResetPasswordEmail(email, resetLink, user.studentName || 'Student');
+    } catch (mailErr) {
+      console.warn(`⚠️ Email delivery notice: ${mailErr.message}. Link: ${resetLink}`);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset link sent to your email.',
+    });
+  } catch (err) {
+    console.error('forgotPassword error:', err.message);
+    res.status(500).json({ success: false, message: 'Failed to request password reset.' });
+  }
+};
+
+/**
+ * POST /api/auth/reset-password
+ */
+const resetPassword = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'Reset token missing.' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    } catch {
+      return res.status(401).json({ success: false, message: 'Invalid or expired reset token.' });
+    }
+
+    if (decoded.purpose !== 'reset-password' && decoded.purpose !== 'set-password') {
+      return res.status(401).json({ success: false, message: 'Invalid token purpose.' });
+    }
+
+    const email = decoded.email;
+    const password = (req.body.password || '').trim();
+
+    if (!password || password.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    if (isDBConnected()) {
+      const updatedUser = await User.findOneAndUpdate(
+        { email },
+        { hashedPassword },
+        { new: true }
+      );
+      if (!updatedUser) {
+        return res.status(404).json({ success: false, message: 'Student account not found.' });
+      }
+    } else {
+      const u = memoryUsers.get(email);
+      if (!u) {
+        return res.status(404).json({ success: false, message: 'Student account not found.' });
+      }
+      u.hashedPassword = hashedPassword;
+      memoryUsers.set(email, u);
+      saveMemoryUsers(memoryUsers);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset successful. You can now log in.',
+    });
+  } catch (err) {
+    console.error('resetPassword error:', err.message);
+    res.status(500).json({ success: false, message: 'Failed to reset password.' });
+  }
+};
+
+module.exports = { checkEmail, sendOTP, verifyOTP, setPassword, login, forgotPassword, resetPassword };

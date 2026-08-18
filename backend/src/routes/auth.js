@@ -8,6 +8,8 @@ const {
   verifyOTP,
   setPassword,
   login,
+  forgotPassword,
+  resetPassword,
 } = require('../controllers/authController');
 
 // Rate limiters
@@ -29,6 +31,8 @@ const loginLimiter = rateLimit({
 
 // Routes
 router.post('/check-email',           checkEmail);
+router.post('/forgot-password',       forgotPassword);
+router.post('/reset-password',         resetPassword);
 router.post('/send-otp',    otpLimiter, sendOTP);
 router.post('/verify-otp',  otpLimiter, verifyOTP);
 router.post('/set-password',           setPassword);
