@@ -17,15 +17,38 @@ const PORT = process.env.PORT || 5000;
 app.set('trust proxy', 1);
 
 // ── Middleware ─────────────────────────────────────────────────────────────────
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'https://ptp-new-site-myen.vercel.app',
+  'https://ptp-new-site.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+].filter(Boolean);
+
 app.use(cors({
-  origin: [
-    process.env.CLIENT_URL || 'http://localhost:5173',
-    'http://localhost:3000',
-  ],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+    if (!origin) return callback(null, true);
+
+    const cleanOrigin = origin.trim().replace(/\/$/, '');
+    const isAllowed = allowedOrigins.some(o => o.trim().replace(/\/$/, '') === cleanOrigin) ||
+                      /\.vercel\.app$/.test(cleanOrigin) ||
+                      cleanOrigin.includes('localhost') ||
+                      cleanOrigin.includes('127.0.0.1');
+
+    if (isAllowed) {
+      return callback(null, true);
+    }
+    
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }));
+
+app.options('*', cors());
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
