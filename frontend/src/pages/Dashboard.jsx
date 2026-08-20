@@ -335,6 +335,11 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Footer */}
+        <footer className="mt-12 text-center text-xs text-gray-400 py-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p>© {new Date().getFullYear()} RTU Kota — Training & Placement Cell</p>
+          <p className="text-gray-400">Designed & Developed with ❤️ by <span className="font-semibold text-rtu-blue">Om Gupta</span></p>
+        </footer>
       </main>
     </div>
   );

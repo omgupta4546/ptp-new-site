@@ -226,9 +226,10 @@ export default function Admin() {
 
       {/* Footer */}
       <footer className="bg-white border-t border-slate-100 mt-auto py-6">
-        <p className="text-center text-slate-400 text-xs">
-          © {new Date().getFullYear()} Rajasthan Technical University, Kota — Training & Placement Cell
-        </p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-2">
+          <p>© {new Date().getFullYear()} Rajasthan Technical University, Kota — Training & Placement Cell</p>
+          <p>Designed & Developed with ❤️ by <span className="font-semibold text-rtu-blue">Om Gupta</span></p>
+        </div>
       </footer>
     </div>
   );

@@ -162,8 +162,8 @@ export default function AdminLogin() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-blue-200/60 text-xs mt-6">
-          © {new Date().getFullYear()} RTU Kota — Training & Placement Cell
+        <p className="text-center text-blue-200/80 text-xs mt-6">
+          © {new Date().getFullYear()} RTU Kota — Training & Placement Cell • Developed by <span className="font-semibold text-white">Om Gupta</span>
         </p>
       </div>
     </div>

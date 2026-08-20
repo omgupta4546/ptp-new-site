@@ -88,7 +88,14 @@ const getSheetsClient = () => {
   let credentials;
   if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
     try {
-      credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+      let rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON.trim();
+      if (
+        (rawJson.startsWith("'") && rawJson.endsWith("'")) ||
+        (rawJson.startsWith('"') && rawJson.endsWith('"'))
+      ) {
+        rawJson = rawJson.slice(1, -1).trim();
+      }
+      credentials = JSON.parse(rawJson);
     } catch (parseErr) {
       throw new Error('Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON: ' + parseErr.message);
     }

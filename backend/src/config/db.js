@@ -2,7 +2,14 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+    let uri = (process.env.MONGO_URI || '').trim();
+    if (
+      (uri.startsWith('"') && uri.endsWith('"')) ||
+      (uri.startsWith("'") && uri.endsWith("'"))
+    ) {
+      uri = uri.slice(1, -1).trim();
+    }
+    const conn = await mongoose.connect(uri);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`⚠️ MongoDB Connection Warning: ${error.message}`);

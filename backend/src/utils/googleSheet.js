@@ -6,7 +6,14 @@ function getAuthClient() {
   // Prefer a JSON string in env (for Docker/CI), otherwise read from a file path.
   let credentials;
   if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
-    credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+    let rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON.trim();
+    if (
+      (rawJson.startsWith("'") && rawJson.endsWith("'")) ||
+      (rawJson.startsWith('"') && rawJson.endsWith('"'))
+    ) {
+      rawJson = rawJson.slice(1, -1).trim();
+    }
+    credentials = JSON.parse(rawJson);
   } else if (process.env.GOOGLE_SERVICE_ACCOUNT_PATH) {
     const fs = require('fs');
     const raw = fs.readFileSync(process.env.GOOGLE_SERVICE_ACCOUNT_PATH, 'utf-8');
