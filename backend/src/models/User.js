@@ -10,6 +10,9 @@ const userSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    password: {
+      type: String,
+    },
     rollNumber: {
       type: String,
       default: null,
@@ -37,14 +40,6 @@ const userSchema = new mongoose.Schema(
     phoneNumber: {
       type: String,
       default: null,
-    },
-    hashedPassword: {
-      type: String,
-      required: true,
-    },
-    isVerified: {
-      type: Boolean,
-      default: false,
     },
     lastLogin: {
       type: Date,

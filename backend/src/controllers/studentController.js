@@ -201,17 +201,17 @@ const getMyProfile = async (req, res) => {
     const activeCourseData = primaryCourse === 'mba' ? mbaData : (primaryCourse === 'mtech' ? mtechData : btechData);
 
     const profile = {
-      rollNumber: student.rollNumber,
-      studentName: student.studentName,
+      rollNumber: student.rollNumber || '',
+      studentName: student.studentName || '',
       rtuEnrollmentNo: student.collegeRollNo || '', // for legacy compatibility
       collegeRollNo: student.collegeRollNo || '',
       class10: student.class10 || '',
       class12: student.class12 || '',
       diploma: student.diploma || '',
-      branch: student.branch,
-      currentYearSem: student.currentYearSem,
-      email: student.emailId,
-      phoneNumber: student.phoneNumber,
+      branch: student.branch || '',
+      currentYearSem: student.currentYearSem || '',
+      email: student.emailId || '',
+      phoneNumber: student.phoneNumber || '',
       dob: student.dob || '',
 
       // Root details (backward compatibility)

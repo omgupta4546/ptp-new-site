@@ -2,18 +2,13 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import useAuthStore from './store/authStore';
 import useAdminStore from './store/adminStore';
-import Register    from './pages/Register';
-import VerifyOTP   from './pages/VerifyOTP';
-import SetPassword from './pages/SetPassword';
 import Login       from './pages/Login';
 import Dashboard   from './pages/Dashboard';
 import Admin       from './pages/Admin';
 import AdminLogin  from './pages/AdminLogin';
 import AttendanceControl from './pages/AttendanceControl';
 import VolunteerScanner from './pages/VolunteerScanner';
-import ForgotPassword from './pages/ForgotPassword';
 import AdminForgotPassword from './pages/AdminForgotPassword';
-import ResetPassword  from './pages/ResetPassword';
 
 // Student Protected route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -77,12 +72,7 @@ export default function App() {
       <Route path="/" element={<Navigate to="/login" replace />} />
 
       {/* Student Auth Flow */}
-      <Route path="/register"        element={<PublicRoute><Register /></PublicRoute>} />
-      <Route path="/verify-otp"      element={<PublicRoute><VerifyOTP /></PublicRoute>} />
-      <Route path="/set-password"    element={<PublicRoute><SetPassword /></PublicRoute>} />
       <Route path="/login"           element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password"  element={<ResetPassword />} />
 
       {/* Student Protected Portal */}
       <Route path="/dashboard"    element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

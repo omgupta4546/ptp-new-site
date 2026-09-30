@@ -25,6 +25,9 @@ export default function Admin() {
     }
   }, [adminToken, navigate]);
 
+  const [settingsSheetId, setSettingsSheetId] = useState('');
+  const [settingsLoading, setSettingsLoading] = useState(false);
+
   useEffect(() => {
     if (adminToken) {
       // Restore active attendance session (if any)
@@ -39,8 +42,31 @@ export default function Admin() {
           setAttOpen(true);
         }
       }).catch(() => { });
+
+      // Fetch admin settings
+      import('../services/api').then(({ adminAPI }) => {
+        adminAPI.getSettings().then(res => {
+          if (res.data?.success) {
+            setSettingsSheetId(res.data.data.GOOGLE_SHEET_ID || '');
+          }
+        }).catch(err => console.error(err));
+      });
     }
   }, [adminToken]);
+
+  const handleUpdateSettings = async () => {
+    try {
+      setSettingsLoading(true);
+      const { adminAPI } = await import('../services/api');
+      await adminAPI.updateSettings({ GOOGLE_SHEET_ID: settingsSheetId });
+      toast.success('Sheet connected successfully! Cache cleared.');
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to update settings');
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
 
   // ── Attendance Functions ──
   const handleAttChange = (e) => setAttForm({ ...attForm, [e.target.name]: e.target.value });
@@ -149,6 +175,41 @@ export default function Admin() {
       {/* Main Container */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-1 w-full space-y-6">
         
+        {/* Settings Section */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <h2 className="font-bold text-slate-900 text-base flex items-center gap-2">
+              <span className="text-xl">⚙️</span>
+              Database Connection (Google Sheets)
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">Connect a different Google Sheet without changing code.</p>
+          </div>
+          <div className="p-6">
+            <div className="flex flex-col gap-3">
+              <label className="text-xs font-semibold text-slate-500">Google Sheet ID</label>
+              <div className="flex gap-3">
+                <input 
+                  type="text" 
+                  value={settingsSheetId} 
+                  onChange={(e) => setSettingsSheetId(e.target.value)}
+                  placeholder="Paste the Sheet ID here"
+                  className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-navy-600 focus:ring-2 focus:ring-navy-100 text-sm outline-none transition font-mono text-slate-700" 
+                />
+                <button 
+                  onClick={handleUpdateSettings} 
+                  disabled={settingsLoading || !settingsSheetId.trim()}
+                  className="inline-flex items-center px-5 py-2.5 rounded-xl bg-rtu-navy hover:bg-blue-900 text-white text-sm font-bold transition shadow-sm disabled:opacity-50"
+                >
+                  {settingsLoading ? 'Saving...' : 'Connect Sheet'}
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                Note: Ensure the sheet is shared with the existing Service Account email or set to "Anyone with the link can view".
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Attendance Control Section */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">

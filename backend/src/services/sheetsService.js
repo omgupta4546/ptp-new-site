@@ -67,19 +67,22 @@ const mapHeadersToKeys = (headers) => {
     }
 
     // Core fields
-    if (clean.includes('university roll') || clean.includes('university_roll') || clean.includes('roll_number') || clean === 'roll number') return 'rollNumber';
-    if (clean.includes('college roll') || clean.includes('college_roll')) return 'collegeRollNo';
-    if (clean.includes('student_name') || clean === 'student name') return 'studentName';
+    if (clean.includes('university roll') || clean.includes('college roll') || clean.includes('roll')) return 'rollNumber';
+    if (clean.includes('student name') || clean.includes('first name') || clean.includes('name of student')) return 'studentName';
     if (clean === 'branch' || clean === 'branch_name' || (clean.includes('branch') && !clean.includes('m.tech') && !clean.includes('mtech') && !clean.includes('mba'))) return 'branch';
     if (clean.includes('current_year_sem') || clean.includes('current year') || clean.includes('year/sem')) return 'currentYearSem';
-    if (clean.includes('email_id') || clean.includes('email id')) return 'emailId';
-    if (clean.includes('phone_number') || clean.includes('phone number')) return 'phoneNumber';
+    if (clean.includes('email') || clean.includes('mail')) return 'emailId';
+    if (clean.includes('phone') || clean.includes('mobile') || clean.includes('contact')) return 'phoneNumber';
     if (clean.includes('date of birth') || clean === 'dob' || clean.includes('birth')) return 'dob';
     
     // General / fallback
     return clean.replace(/[^a-z0-9]/g, '_');
   });
 };
+
+const getEmailKey = () => 'emailId';
+const getRollKey = () => 'rollNumber';
+const getNameKey = () => 'studentName';
 
 /**
  * Build and return an authenticated Google Sheets API client
@@ -134,7 +137,7 @@ const fetchFallbackLocalCSV = () => {
 
   // Parse CSV headers
   const headers = lines[0].split(',');
-  const jsKeys = mapHeadersToKeys(headers);
+  const jsKeys = mapHeadersToKeys(headers); console.log('JS KEYS:', jsKeys);
 
   // Simple CSV parser for lines
   const students = lines.slice(1).map((line) => {
@@ -149,10 +152,16 @@ const fetchFallbackLocalCSV = () => {
     return student;
   });
 
-  const filtered = students.filter((s) => s.emailId || s.rollNumber);
+  const filtered = students.filter((s) => {
+    const emailKey = getEmailKey(s);
+    const rollKey = getRollKey(s);
+    return s[emailKey] || s[rollKey];
+  });
   console.log(`📁 Loaded ${filtered.length} student records from local fallback CSV (students_sample.csv)`);
   return filtered;
 };
+
+const Settings = require('../models/Settings');
 
 /**
  * Fetch all students from the configured Google Sheet.
@@ -166,11 +175,22 @@ const fetchAllStudents = async (force = false) => {
 
   try {
     const sheets = getSheetsClient();
-    const sheetId = process.env.GOOGLE_SHEET_ID;
-    const range = process.env.GOOGLE_SHEET_RANGE || 'Sheet1!A1:BT';
+    
+    // Check database settings first, then fallback to .env
+    let sheetId = process.env.GOOGLE_SHEET_ID;
+    try {
+      const dbSettings = await Settings.findOne({ key: 'GOOGLE_SHEET_ID' });
+      if (dbSettings && dbSettings.value) {
+        sheetId = dbSettings.value;
+      }
+    } catch (e) {
+      console.warn('⚠️ Could not fetch GOOGLE_SHEET_ID from DB:', e.message);
+    }
+    
+    const range = process.env.GOOGLE_SHEET_RANGE || 'Sheet1!A1:ZZ';
 
     if (!sheetId || sheetId === 'sample_sheet_id') {
-      throw new Error('GOOGLE_SHEET_ID is not configured in backend/.env');
+      throw new Error('GOOGLE_SHEET_ID is not configured in DB or backend/.env');
     }
 
     const response = await sheets.spreadsheets.values.get({
@@ -186,9 +206,20 @@ const fetchAllStudents = async (force = false) => {
       return cachedData;
     }
 
-    const headers = rows[0];
+    // Find the actual header row by scanning for the first row with a substantial number of columns
+    let headerRowIndex = 0;
+    for (let i = 0; i < rows.length; i++) {
+      if (rows[i] && rows[i].length > 3) {
+        headerRowIndex = i;
+        break;
+      }
+    }
+
+    const headers = rows[headerRowIndex] || [];
     const jsKeys = mapHeadersToKeys(headers);
-    const students = rows.slice(1).map((row) => {
+    
+    // Parse students starting from the row after headers
+    const students = rows.slice(headerRowIndex + 1).map((row) => {
       const student = {};
       jsKeys.forEach((jsKey, idx) => {
         if (jsKey) student[jsKey] = row[idx] !== undefined ? String(row[idx]).trim() : '';
@@ -196,7 +227,11 @@ const fetchAllStudents = async (force = false) => {
       return student;
     });
 
-    const filtered = students.filter((s) => s.emailId || s.rollNumber);
+    const filtered = students.filter((s) => {
+      const emailKey = getEmailKey(s);
+      const rollKey = getRollKey(s);
+      return s[emailKey] || s[rollKey];
+    });
     cachedData = filtered;
     lastFetchedAt = now;
     console.log(`📊 Loaded ${filtered.length} student records live from Google Sheets`);
@@ -219,7 +254,10 @@ const findStudentByEmail = async (email) => {
   const students = await fetchAllStudents();
   if (!email) return null;
   const target = email.trim().toLowerCase();
-  return students.find((s) => s.emailId && s.emailId.trim().toLowerCase() === target) || null;
+  return students.find((s) => {
+    const emailKey = getEmailKey(s);
+    return s[emailKey] && s[emailKey].trim().toLowerCase() === target;
+  }) || null;
 };
 
 /**
@@ -242,4 +280,7 @@ module.exports = {
   findStudentByEmail,
   emailExistsInSheet,
   refreshCache,
+  getEmailKey,
+  getRollKey,
+  getNameKey,
 };

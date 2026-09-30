@@ -3,23 +3,10 @@ const rateLimit = require('express-rate-limit');
 const router = express.Router();
 
 const {
-  checkEmail,
-  sendOTP,
-  verifyOTP,
-  setPassword,
   login,
-  forgotPassword,
-  resetPassword,
+  googleLogin,
+  setPassword,
 } = require('../controllers/authController');
-
-// Rate limiters
-const otpLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 3, // max 3 requests
-  message: { success: false, message: 'Too many OTP requests. Please try again after 5 minutes.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -30,15 +17,8 @@ const loginLimiter = rateLimit({
 });
 
 // Routes
-router.post('/check-email',           checkEmail);
-router.post('/forgot-password',       forgotPassword);
-router.post('/reset-password',         resetPassword);
-router.post('/send-otp',    otpLimiter, sendOTP);
-router.post('/verify-otp',  otpLimiter, verifyOTP);
-router.post('/set-password',           setPassword);
-router.post('/login',     loginLimiter, login);
-
-// Alias: resend-otp → send-otp (same logic, rate-limited)
-router.post('/resend-otp',  otpLimiter, sendOTP);
+router.post('/login', loginLimiter, login);
+router.post('/google', loginLimiter, googleLogin);
+router.post('/set-password', loginLimiter, setPassword);
 
 module.exports = router;

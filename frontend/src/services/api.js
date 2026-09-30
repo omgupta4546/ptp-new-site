@@ -61,22 +61,10 @@ api.interceptors.response.use(
   }
 );
 
-// ── Auth API ──────────────────────────────────────────────────────────────────
 export const authAPI = {
-  checkEmail:     (email)            => api.post('/auth/check-email',   { email }),
-  sendOTP:        (email)            => api.post('/auth/send-otp',       { email }),
-  resendOTP:      (email)            => api.post('/auth/resend-otp',     { email }),
-  verifyOTP:      (email, otp)       => api.post('/auth/verify-otp',     { email, otp }),
-  setPassword:    (password, token)  =>
-    api.post('/auth/set-password', { password }, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
-  login:          (email, password)  => api.post('/auth/login',          { email, password }),
-  forgotPassword: (email)            => api.post('/auth/forgot-password', { email }),
-  resetPassword:  (password, token)  =>
-    api.post('/auth/reset-password', { password }, {
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+  login: (email, password) => api.post('/auth/login', { email, password }),
+  googleLogin: (credential) => api.post('/auth/google', { credential }),
+  setPassword: (tempToken, password) => api.post('/auth/set-password', { tempToken, password }),
 };
 
 // ── Student API ───────────────────────────────────────────────────────────────
@@ -93,6 +81,8 @@ export const adminAPI = {
     api.post('/admin/reset-password', { password }, {
       headers: { Authorization: `Bearer ${token}` },
     }),
+  getSettings:    () => api.get('/admin/settings'),
+  updateSettings: (settings) => api.post('/admin/settings', settings),
 };
 
 export default api;

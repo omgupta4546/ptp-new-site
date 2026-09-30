@@ -2,14 +2,18 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import App from './App.jsx';
 import './index.css';
 
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '691174506062-ht2dp63353ti85cosg3asiv9piu2n882.apps.googleusercontent.com';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-      <Toaster
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <BrowserRouter>
+        <App />
+        <Toaster
         position="top-right"
         toastOptions={{
           duration: 4000,
@@ -29,5 +33,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         }}
       />
     </BrowserRouter>
+    </GoogleOAuthProvider>
   </React.StrictMode>
 );
