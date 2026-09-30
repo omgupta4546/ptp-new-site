@@ -186,4 +186,62 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { adminLogin, forgotPassword, resetPassword };
+/**
+ * GET /api/admin/settings
+ * Retrieve settings like Google Sheet ID
+ */
+const getSettings = async (req, res) => {
+  try {
+    const Settings = require('../models/Settings');
+    let sheetId = process.env.GOOGLE_SHEET_ID; // default
+    if (isDBConnected()) {
+      const dbSettings = await Settings.findOne({ key: 'GOOGLE_SHEET_ID' });
+      if (dbSettings && dbSettings.value) {
+        sheetId = dbSettings.value;
+      }
+    }
+    res.status(200).json({
+      success: true,
+      data: {
+        GOOGLE_SHEET_ID: sheetId
+      }
+    });
+  } catch (err) {
+    console.error('admin getSettings error:', err.message);
+    res.status(500).json({ success: false, message: 'Failed to get settings.' });
+  }
+};
+
+/**
+ * POST /api/admin/settings
+ * Update settings like Google Sheet ID
+ */
+const updateSettings = async (req, res) => {
+  try {
+    const Settings = require('../models/Settings');
+    const { GOOGLE_SHEET_ID } = req.body;
+    
+    if (isDBConnected()) {
+      if (GOOGLE_SHEET_ID) {
+        await Settings.findOneAndUpdate(
+          { key: 'GOOGLE_SHEET_ID' },
+          { value: GOOGLE_SHEET_ID },
+          { upsert: true, new: true }
+        );
+        // Force clear the cache in sheetsService
+        const { refreshCache } = require('../services/sheetsService');
+        await refreshCache();
+      }
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: 'Settings updated successfully.',
+    });
+  } catch (err) {
+    console.error('admin updateSettings error:', err.message);
+    res.status(500).json({ success: false, message: 'Failed to update settings.' });
+  }
+};
+
+module.exports = { adminLogin, forgotPassword, resetPassword, getSettings, updateSettings };
