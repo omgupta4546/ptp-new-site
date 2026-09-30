@@ -21,29 +21,6 @@ async function getAccessToken() {
   return data.access_token;
 }
 
-/**
- * Send OTP verification email to student
- * @param {string} to - Recipient email address
- * @param {string} otp - 6-digit OTP
- * @param {string} studentName - Student name (optional)
- */
-const 
-      body: JSON.stringify({
-        raw: base64SafeString,
-      }),
-    });
-
-    const sendData = await sendResponse.json();
-    if (!sendResponse.ok) {
-      throw new Error('Failed to send email via Gmail REST API: ' + JSON.stringify(sendData));
-    }
-    console.log(`📧 OTP email sent to ${to} via Gmail REST API — MessageId: ${sendData.id}`);
-    return sendData;
-  } catch (err) {
-    console.error('❌ Error sending OTP email via Gmail REST API:', err.message);
-    throw err;
-  }
-};
 
 /**
  * Verify Gmail REST API connection (call on server startup)
@@ -178,4 +155,4 @@ const sendResetPasswordEmail = async (to, resetLink, name = 'User') => {
   }
 };
 
-module.exports = { sendOTPEmail, verifyMailerConnection, sendResetPasswordEmail };
+module.exports = { verifyMailerConnection, sendResetPasswordEmail };
