@@ -76,9 +76,7 @@ export const studentAPI = {
 // ── Admin API ─────────────────────────────────────────────────────────────────
 export const adminAPI = {
   adminLogin:     (username, password) => api.post('/admin/login', { username, password }),
-  forgotPassword: (email)              => api.post('/admin/forgot-password', { email }),
-  resetPassword:  (password, token)    =>
-    api.post('/admin/reset-password', { password }, {
+   {
       headers: { Authorization: `Bearer ${token}` },
     }),
   getSettings:    () => api.get('/admin/settings'),
